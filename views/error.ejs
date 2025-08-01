@@ -1,0 +1,30 @@
+<%- include('partials/header', { showHero: false }) %>
+
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow">
+                    <div class="card-header bg-danger text-white">
+                        <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Error</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <h5><%= message %></h5>
+                        <% if (typeof error !== 'undefined' && process.env.NODE_ENV === 'development') { %>
+                            <div class="mt-4">
+                                <p class="text-muted">Error Details:</p>
+                                <pre class="bg-light p-3 rounded"><%= JSON.stringify(error, null, 2) %></pre>
+                            </div>
+                        <% } %>
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a href="javascript:history.back()" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i> Go Back</a>
+                            <a href="/" class="btn btn-primary"><i class="fas fa-home me-2"></i> Go to Home</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %> 

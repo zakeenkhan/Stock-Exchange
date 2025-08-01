@@ -1,0 +1,264 @@
+<html lang="en">
+<head>
+    <%- include('../partials/header') %>
+    <title><%= title || 'Stock Details' %></title>
+    <style>
+        .stock-header { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+        .price-change { font-weight: bold; }
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+    
+    <div class="container mt-4">
+        <% if (stock) { %>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="stock-header">
+                                <h1 class="card-title mb-1"><%= stock.company_name || stock.symbol %></h1>
+                                <h3 class="mb-3"><%= stock.symbol %></h3>
+                                
+                                <div class="d-flex align-items-center mb-2">
+                                    <h2 class="mb-0 mr-3">$<%= parseFloat(stock.current_price || 0).toFixed(2) %></h2>
+                                    <% 
+                                    const change = parseFloat(stock.change || 0);
+                                    const changePercent = parseFloat(stock.percent_change || 0);
+                                    const isPositive = change >= 0;
+                                    %>
+                                    <span class="price-change <%= isPositive ? 'positive' : 'negative' %>">
+                                        <%= isPositive ? '+' : '' %><%= change.toFixed(2) %> 
+                                        (<%= isPositive ? '+' : '' %><%= changePercent.toFixed(2) %>%)
+                                    </span>
+                                    
+                                    <!-- Add to Watchlist Dropdown -->
+                                    <div class="dropdown ms-3">
+                                        <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="addToWatchlistDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-plus me-1"></i> Add to Watchlist
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="addToWatchlistDropdown" id="watchlistDropdown">
+                                            <% if (typeof watchlists !== 'undefined' && watchlists.length > 0) { %>
+                                                <% watchlists.forEach(watchlist => { %>
+                                                    <li>
+                                                        <a class="dropdown-item watchlist-item" href="#" data-list-id="<%= watchlist.id %>">
+                                                            <%= watchlist.name %>
+                                                        </a>
+                                                    </li>
+                                                <% }); %>
+                                                <li><hr class="dropdown-divider"></li>
+                                            <% } %>
+                                            <li>
+                                                <a class="dropdown-item" href="/dashboard/watchlist/new">
+                                                    <i class="fas fa-plus me-1"></i> Create New Watchlist
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <p class="mb-1"><strong>Market Cap:</strong> $<%= (stock.market_cap || 0).toLocaleString() %></p>
+                                        <p class="mb-1"><strong>Volume:</strong> <%= (stock.volume || 0).toLocaleString() %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-1"><strong>Open:</strong> $<%= (stock.open || 0).toFixed(2) %></p>
+                                        <p class="mb-1"><strong>Previous Close:</strong> $<%= (stock.previous_close || 0).toFixed(2) %></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Stock Chart Placeholder -->
+                            <div id="stockChart" style="height: 300px;" class="mb-4">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="sr-only">Loading chart...</span>
+                                    </div>
+                                    <p class="mt-2">Loading chart data...</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Company Description -->
+                            <% if (stock.description) { %>
+                                <div class="company-description">
+                                    <h5>About <%= stock.company_name || stock.symbol %></h5>
+                                    <p><%= stock.description %></p>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <!-- News Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Latest News</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <% if (news && news.length > 0) { %>
+                                <div class="list-group list-group-flush">
+                                    <% news.slice(0, 5).forEach(article => { %>
+                                        <a href="<%= article.url || '#' %>" 
+                                           target="_blank" 
+                                           class="list-group-item list-group-item-action">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1"><%= article.title %></h6>
+                                                <small class="text-muted">
+                                                    <%= new Date(article.published_at).toLocaleDateString() %>
+                                                </small>
+                                            </div>
+                                            <p class="mb-1"><%= article.summary || '' %></p>
+                                            <small class="text-muted">Read more →</small>
+                                        </a>
+                                    <% }); %>
+                                </div>
+                            <% } else { %>
+                                <div class="p-3 text-center text-muted">
+                                    No recent news available.
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Sidebar -->
+                <div class="col-md-4">
+                    <!-- Add to Watchlist -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Add to Watchlist</h5>
+                        </div>
+                        <div class="card-body">
+                            <% if (user) { %>
+                                <form id="addToListForm">
+                                    <input type="hidden" name="stock_id" value="<%= stock.id %>">
+                                    <div class="form-group">
+                                        <label for="listSelect">Select Watchlist</label>
+                                        <select class="form-control" id="listSelect" name="list_id" required>
+                                            <option value="" disabled selected>Choose a watchlist</option>
+                                            <% if (lists && lists.length > 0) { %>
+                                                <% lists.forEach(list => { %>
+                                            <option value="<%= list.id %>" <%= list.hasStock ? 'disabled' : '' %>><%= list.name %> <%= list.hasStock ? '(Already Added)' : '' %></option>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <option disabled>No watchlists found</option>
+                                    <% } %>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add to List</button>
+                        </form>
+                        <% } else { %>
+                            <p>Please <a href="/auth/login">log in</a> to add this stock to a watchlist.</p>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Key Statistics -->
+                <div class="card mb-4">
+                    <div class="card-header">Key Statistics</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>52-Week High</strong></td>
+                                        <td class="text-right">$<%= (stock.fifty_two_week_high || 0).toFixed(2) %></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>52-Week Low</strong></td>
+                                        <td class="text-right">$<%= (stock.fifty_two_week_low || 0).toFixed(2) %></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Avg Volume</strong></td>
+                                        <td class="text-right"><%= (stock.avg_volume || 0).toLocaleString() %></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>P/E Ratio</strong></td>
+                                        <td class="text-right"><%= (stock.pe_ratio || 'N/A') %></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Dividend Yield</strong></td>
+                                        <td class="text-right"><%= (stock.dividend_yield ? (stock.dividend_yield * 100).toFixed(2) + '%' : 'N/A') %></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About the Company -->
+                <div class="card mb-4">
+                    <div class="card-header">About</div>
+                    <div class="card-body">
+                        <p><strong>Sector:</strong> <%= stock.sector || 'N/A' %></p>
+                        <p><strong>Industry:</strong> <%= stock.industry || 'N/A' %></p>
+                        <% if (stock.website) { %>
+                            <p><strong>Website:</strong> <a href="<%= stock.website.startsWith('http') ? stock.website : 'https://' + stock.website %>" target="_blank"><%= stock.website %></a></p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%- include('../partials/footer') %>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const watchlistItems = document.querySelectorAll('.watchlist-item');
+        
+        watchlistItems.forEach(item => {
+            item.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const listId = this.getAttribute('data-list-id');
+                const stockId = '<%= stock.id || stock.symbol %>';
+                
+                try {
+                    const response = await fetch('/lists/add-stock', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            list_id: listId,
+                            stock_id: stockId
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Show success message
+                        const toast = document.createElement('div');
+                        toast.className = 'position-fixed bottom-0 end-0 p-3';
+                        toast.innerHTML = `
+                            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                                <div class="toast-header bg-success text-white">
+                                    <strong class="me-auto">Success</strong>
+                                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                                </div>
+                                <div class="toast-body">
+                                    Stock added to watchlist successfully!
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        
+                        // Remove toast after 3 seconds
+                        setTimeout(() => {
+                            toast.remove();
+                        }, 3000);
+                    } else {
+                        throw new Error(result.message || 'Failed to add to watchlist');
+                    }
+                } catch (error) {
+                    console.error('Error adding to watchlist:', error);
+                    alert('Failed to add stock to watchlist: ' + error.message);
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

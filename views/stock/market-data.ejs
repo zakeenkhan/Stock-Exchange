@@ -1,0 +1,264 @@
+<%- include('../partials/header', { title: 'Market Data', activeNav: 'market-data' }) %>
+
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 700px;">
+            <h1 class="display-5 mb-4">Real-time Market Data</h1>
+            <p class="mb-4">Access up-to-the-minute stock prices, market indices, and financial data to make informed investment decisions.</p>
+        </div>
+
+        <!-- Market Indices -->
+        <div class="row g-4 mb-5">
+            <% if (marketData && marketData.indices) { %>
+                <% marketData.indices.forEach(function(index) { %>
+                    <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <h4 class="card-title mb-3"><%= index.name %></h4>
+                                <h2 class="mb-2"><%= index.value %></h2>
+                                <span class="badge <%= index.change.startsWith('+') ? 'bg-success' : 'bg-danger' %>">
+                                    <%= index.change %>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="col-12 text-center">
+                    <p>Market data is currently unavailable. Please try again later.</p>
+                </div>
+            <% } %>
+                                        <% indices.forEach(index => { %>
+                                            <tr>
+                                                <td><strong><%= index.name %></strong></td>
+                                                <td><%= index.value.toFixed(2) %></td>
+                                                <td class="<%= index.change >= 0 ? 'text-success' : 'text-danger' %>">
+                                                    <%= index.change >= 0 ? '+' : '' %><%= index.change.toFixed(2) %>
+                                                </td>
+                                                <td class="<%= index.percent_change >= 0 ? 'text-success' : 'text-danger' %>">
+                                                    <%= index.percent_change >= 0 ? '+' : '' %><%= index.percent_change.toFixed(2) %>%
+                                                </td>
+                                                <td><%= new Date(index.last_updated).toLocaleString() %></td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="5" class="text-center">No market indices data available</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Stocks -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Top Stocks by Market Cap</h4>
+                        <div>
+                            <% if (typeof user !== 'undefined' && user) { %>
+                                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#addToWatchlistModal">
+                                    <i class="fas fa-plus-circle me-2"></i>Add to Watchlist
+                                </button>
+                            <% } else { %>
+                                <a href="/auth/login" class="btn btn-sm btn-light">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Login to Add to Watchlist
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="stocksTable">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Name</th>
+                                        <th>Price</th>
+                                        <th>Change</th>
+                                        <th>% Change</th>
+                                        <th>Market Cap</th>
+                                        <th>Volume</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (topStocks && topStocks.length > 0) { %>
+                                        <% topStocks.forEach(stock => { %>
+                                            <tr>
+                                                <td><strong><%= stock.symbol %></strong></td>
+                                                <td><%= stock.name %></td>
+                                                <td>$<%= stock.current_price.toFixed(2) %></td>
+                                                <td class="<%= stock.price_change >= 0 ? 'text-success' : 'text-danger' %>">
+                                                    <%= stock.price_change >= 0 ? '+' : '' %><%= stock.price_change.toFixed(2) %>
+                                                </td>
+                                                <td class="<%= stock.percent_change >= 0 ? 'text-success' : 'text-danger' %>">
+                                                    <%= stock.percent_change >= 0 ? '+' : '' %><%= stock.percent_change.toFixed(2) %>%
+                                                </td>
+                                                <td>$<%= (stock.market_cap / 1000000000).toFixed(2) %>B</td>
+                                                <td><%= (stock.volume / 1000000).toFixed(2) %>M</td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="viewStockDetails('<%= stock.id %>')">
+                                                            <i class="fas fa-chart-line"></i>
+                                                        </button>
+                                                        <% if (typeof user !== 'undefined' && user) { %>
+                                                            <button class="btn btn-sm btn-outline-success" onclick="addToWatchlist('<%= stock.id %>')">
+                                                                <i class="fas fa-plus"></i>
+                                                            </button>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="8" class="text-center">No stock data available</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add to Watchlist Modal -->
+<% if (typeof user !== 'undefined' && user) { %>
+    <div class="modal fade" id="addToWatchlistModal" tabindex="-1" aria-labelledby="addToWatchlistModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addToWatchlistModalLabel">Add to Watchlist</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/dashboard/list/add" method="POST" id="addToListForm">
+                        <input type="hidden" name="stock_id" id="selectedStockId">
+                        <div class="mb-3">
+                            <label for="watchlistSelect" class="form-label">Select Watchlist</label>
+                            <select class="form-select" id="watchlistSelect" name="watchlist_id" required>
+                                <option value="">Select a watchlist</option>
+                                <!-- Watchlist options will be populated via AJAX -->
+                            </select>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#newWatchlistForm">
+                                Create New Watchlist
+                            </button>
+                            <button type="submit" class="btn btn-primary">Add to Watchlist</button>
+                        </div>
+                        
+                        <div class="collapse mt-3" id="newWatchlistForm">
+                            <div class="card card-body">
+                                <div class="mb-3">
+                                    <label for="newWatchlistName" class="form-label">New Watchlist Name</label>
+                                    <input type="text" class="form-control" id="newWatchlistName" name="new_watchlist_name">
+                                </div>
+                                <button type="button" class="btn btn-success" id="createWatchlistBtn">Create & Add</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+<% } %>
+
+<script>
+    // Function to view stock details
+    function viewStockDetails(stockId) {
+        window.location.href = `/stock/${stockId}`;
+    }
+    
+    // Function to add stock to watchlist
+    function addToWatchlist(stockId) {
+        document.getElementById('selectedStockId').value = stockId;
+        
+        // Fetch user's watchlists
+        fetch('/dashboard/list/list')
+            .then(response => response.json())
+            .then(data => {
+                const watchlistSelect = document.getElementById('watchlistSelect');
+                watchlistSelect.innerHTML = '<option value="">Select a watchlist</option>';
+                
+                data.forEach(watchlist => {
+                    const option = document.createElement('option');
+                    option.value = watchlist.id;
+                    option.textContent = watchlist.name;
+                    watchlistSelect.appendChild(option);
+                });
+                
+                $('#addToWatchlistModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error fetching watchlists:', error);
+                alert('Error loading watchlists. Please try again.');
+            });
+    }
+    
+    // Create new watchlist and add stock
+    document.getElementById('createWatchlistBtn')?.addEventListener('click', function() {
+        const newWatchlistName = document.getElementById('newWatchlistName').value;
+        const stockId = document.getElementById('selectedStockId').value;
+        
+        if (!newWatchlistName) {
+            alert('Please enter a name for your watchlist');
+            return;
+        }
+        
+        // Create new watchlist
+        fetch('/dashboard/list', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: newWatchlistName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add stock to the newly created watchlist
+                fetch('/dashboard/list/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        watchlist_id: data.watchlist_id,
+                        stock_id: stockId
+                    })
+                })
+                .then(response => response.json())
+                .then(addData => {
+                    if (addData.success) {
+                        $('#addToWatchlistModal').modal('hide');
+                        alert('Stock added to your new watchlist');
+                    } else {
+                        alert('Error adding stock to watchlist');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding stock to watchlist:', error);
+                    alert('Error adding stock to watchlist');
+                });
+            } else {
+                alert('Error creating watchlist');
+            }
+        })
+        .catch(error => {
+            console.error('Error creating watchlist:', error);
+            alert('Error creating watchlist');
+        });
+    });
+</script>
+
+<%- include('../partials/footer') %>

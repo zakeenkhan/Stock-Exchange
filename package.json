@@ -1,0 +1,54 @@
+{
+  "name": "stoker",
+  "version": "1.0.0",
+  "description": "Comprehensive stock market platform with real-time data and portfolio management",
+  "main": "app.js",
+  "style": "module",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "migrate": "node scripts/run-migration.js",
+    "db:setup": "node scripts/setup-db.js",
+    "db:seed:initial": "node models/initDb.js",
+    "db:seed:history": "node scripts/seed-history.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "scss": "sass scss/bootstrap.scss css/style.css"
+  },
+  "keywords": [
+    "stocks",
+    "trading",
+    "finance",
+    "portfolio",
+    "investment"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "method-override": "^3.0.0",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.2",
+    "passport": "^0.6.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "sass": "^1.89.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "type": "module"
+}

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/header') %>
+    <title><%= title %></title>
+    <style>
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .stock-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .stock-row:hover {
+            background-color: #f8f9fa;
+        }
+        .positive-change {
+            color: #28a745;
+        }
+        .negative-change {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-xxl bg-white p-0">
+        <!-- Spinner -->
+        <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Navbar -->
+        <%- include('../partials/header') %>
+
+        <!-- Page Header -->
+        <div class="container-fluid page-header mb-5 p-0" style="background-image: url(/img/carousel-1.jpg);">
+            <div class="container-fluid page-header-inner py-5">
+                <div class="container text-center pb-5">
+                    <h1 class="display-3 text-white mb-3 animated slideInDown">All Stocks</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb justify-content-center text-uppercase">
+                            <li class="breadcrumb-item"><a href="/">Home</a></li>
+                            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item text-white active" aria-current="page">All Stocks</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="container-xxl py-5">
+            <div class="container">
+                <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+                    <h6 class="section-title text-center text-primary text-uppercase">Stocks</h6>
+                    <h1 class="mb-5">Explore <span class="text-primary text-uppercase">All Available Stocks</span></h1>
+                </div>
+
+                <!-- Search and Actions -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="input-group search-box">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search by symbol or company name...">
+                            <button class="btn btn-primary" type="button" id="searchButton">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                    <% if (user) { %>
+                    <div class="col-md-4 text-end">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createListModal">
+                            <i class="fas fa-plus"></i> Create New List
+                        </button>
+                    </div>
+                    <% } %>
+                </div>
+
+                <!-- Stocks Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="stocksTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Company Name</th>
+                                <th class="text-end">Price</th>
+                                <th class="text-end">Change</th>
+                                <th class="text-end">% Change</th>
+                                <th class="text-end">Market Cap</th>
+                                <th class="text-end">Volume</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% stocks.forEach(stock => { 
+                                const changeClass = stock.change_percent >= 0 ? 'positive-change' : 'negative-change';
+                                const changeSign = stock.change_percent >= 0 ? '+' : '';
+                            %>
+                                <tr class="stock-row" data-symbol="<%= stock.symbol %>">
+                                    <td class="fw-bold"><%= stock.symbol %></td>
+                                    <td><%= stock.company_name || stock.name || 'N/A' %></td>
+                                    <td class="text-end">$<%= stock.current_price ? parseFloat(stock.current_price).toFixed(2) : 'N/A' %></td>
+                                    <td class="text-end <%= changeClass %>">
+                                        <%= stock.change !== null && stock.change !== undefined ? 
+                                            changeSign + parseFloat(stock.change).toFixed(2) : 'N/A' %>
+                                    </td>
+                                    <td class="text-end <%= changeClass %>">
+                                        <%= stock.change_percent !== null && stock.change_percent !== undefined ? 
+                                            changeSign + parseFloat(stock.change_percent).toFixed(2) + '%' : 'N/A' %>
+                                    </td>
+                                    <td class="text-end">
+                                        <% if (stock.market_cap) { 
+                                            const marketCap = parseFloat(stock.market_cap);
+                                            if (marketCap >= 1000000000) {
+                                                out.write('$' + (marketCap / 1000000000).toFixed(2) + 'B');
+                                            } else if (marketCap >= 1000000) {
+                                                out.write('$' + (marketCap / 1000000).toFixed(2) + 'M');
+                                            } else {
+                                                out.write('$' + marketCap.toFixed(2));
+                                            }
+                                        } else { 
+                                            out.write('N/A');
+                                        } %>
+                                    </td>
+                                    <td class="text-end"><%= stock.volume ? stock.volume.toLocaleString() : 'N/A' %></td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <a href="/stock/<%= stock.symbol %>" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-chart-line"></i> View
+                                            </a>
+                                            <% if (user && lists && lists.length > 0) { %>
+                                            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle dropdown-toggle-split" 
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                <span class="visually-hidden">Toggle Dropdown</span>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><h6 class="dropdown-header">Add to List</h6></li>
+                                                <% lists.forEach(list => { %>
+                                                    <li>
+                                                        <a class="dropdown-item add-to-list-btn" href="#" 
+                                                           data-stock-id="<%= stock.id %>" 
+                                                           data-list-id="<%= list.id %>">
+                                                            <%= list.name %>
+                                                        </a>
+                                                    </li>
+                                                <% }); %>
+                                            </ul>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- No Results Message (Hidden by default) -->
+                <div id="noResults" class="text-center my-5" style="display: none;">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4>No stocks found</h4>
+                    <p class="text-muted">Try adjusting your search or filter to find what you're looking for.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <%- include('../partials/footer') %>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Make table rows clickable
+            $('.stock-row').on('click', function(e) {
+                // Don't navigate if clicking on a button or link
+                if (!$(e.target).closest('a, button').length) {
+                    const symbol = $(this).data('symbol');
+                    window.location.href = '/stock/' + symbol;
+                }
+            });
+
+            // Search functionality
+            $('#searchButton').on('click', searchStocks);
+            $('#searchInput').on('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    searchStocks();
+                }
+            });
+
+            function searchStocks() {
+                const searchTerm = $('#searchInput').val().toLowerCase();
+                let hasResults = false;
+
+                $('.stock-row').each(function() {
+                    const symbol = $(this).find('td:first').text().toLowerCase();
+                    const companyName = $(this).find('td:nth-child(2)').text().toLowerCase();
+                    
+                    if (symbol.includes(searchTerm) || companyName.includes(searchTerm)) {
+                        $(this).show();
+                        hasResults = true;
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                // Show/hide no results message
+                if (hasResults || !searchTerm) {
+                    $('#noResults').hide();
+                    $('#stocksTable').show();
+                } else {
+                    $('#stocksTable').hide();
+                    $('#noResults').show();
+                }
+            }
+
+            // Add to list functionality
+            $('.add-to-list-btn').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const stockId = $(this).data('stock-id');
+                const listId = $(this).data('list-id');
+                
+                // Implement your add to list functionality here
+                console.log('Adding stock', stockId, 'to list', listId);
+                // You can use AJAX to add the stock to the list
+            });
+        });
+    </script>
+
+    <% if (user) { %>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.add-to-list-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const stockId = e.target.dataset.stockId;
+                const listId = e.target.dataset.listId;
+
+                try {
+                    const response = await fetch('/lists/api/add-item', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ stock_id: stockId, list_id: listId })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // You can add a visual confirmation here, like a toast notification
+                        alert('Stock added to list!');
+                    } else {
+                        alert('Failed to add stock: ' + result.message);
+                    }
+                } catch (err) {
+                    console.error('Error adding stock to list:', err);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        });
+    });
+    </script>
+    <% } %>
+
+    <!-- Create List Modal -->
+    <div class="modal fade" id="createListModal" tabindex="-1" aria-labelledby="createListModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createListModalLabel">Create a New List</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/lists/create" method="POST" id="create-list-form">
+                        <div class="mb-3">
+                            <label for="list-name" class="form-label">List Name</label>
+                            <input type="text" class="form-control" id="list-name" name="name" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create List</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

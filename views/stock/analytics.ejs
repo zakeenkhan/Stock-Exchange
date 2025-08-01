@@ -1,0 +1,267 @@
+<%- include('../partials/header', { title: 'Market Analytics', activeNav: 'analytics' }) %>
+
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="text-center mx-auto mb-5 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 700px;">
+            <h1 class="display-5 mb-4">Market Analytics</h1>
+            <p class="mb-4">Advanced market analysis and trading recommendations based on comprehensive data.</p>
+        </div>
+
+        <!-- Market Overview -->
+        <div class="row g-4 mb-5">
+            <% if (marketOverview) { %>
+                <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4 text-center">
+                            <h5 class="mb-3">Total Stocks</h5>
+                            <h2 class="mb-0"><%= marketOverview.total_stocks %></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4 text-center">
+                            <h5 class="mb-3">Average Price</h5>
+                            <h2 class="mb-0">$<%= (marketOverview.avg_price && !isNaN(marketOverview.avg_price)) ? Number(marketOverview.avg_price).toFixed(2) : 'N/A' %></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4 text-center">
+                            <h5 class="mb-3">Average Change</h5>
+                            <h2 class="mb-0 <%= marketOverview.avg_change >= 0 ? 'text-success' : 'text-danger' %>">
+                                <%= marketOverview.avg_change >= 0 ? '+' : '' %><%= marketOverview.avg_change.toFixed(2) %>%
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.7s">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4 text-center">
+                            <h5 class="mb-3">Total Market Cap</h5>
+                            <h2 class="mb-0">$<%= (marketOverview.total_market_cap / 1e12).toFixed(2) %>T</h2>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+        <!-- Trending Stocks -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0">Trending Stocks</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Name</th>
+                                        <th>Price</th>
+                                        <th>Change</th>
+                                        <th>Volume</th>
+                                        <th>Trend</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (locals.trendingStocks && trendingStocks.length > 0) { %>
+                                        <% trendingStocks.forEach(function(stock) { %>
+                                            <tr>
+                                                <td><strong><%= stock.symbol %></strong></td>
+                                                <td><%= stock.name %></td>
+                                                <td>$<%= stock.current_price.toFixed(2) %></td>
+                                                <td class="<%= stock.change_percent >= 0 ? 'text-success' : 'text-danger' %>">
+                                                    <%= stock.change_percent >= 0 ? '+' : '' %><%= stock.change_percent.toFixed(2) %>%
+                                                </td>
+                                                <td><%= stock.volume.toLocaleString() %></td>
+                                                <td>
+                                                    <i class="fas fa-arrow-<%= stock.trend %> text-<%= stock.trend === 'up' ? 'success' : 'danger' %>"></i>
+                                                </td>
+                                                <td>
+                                                    <a href="/stock/details/<%= stock.symbol %>" class="btn btn-sm btn-primary">View Details</a>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="7" class="text-center">No trending stocks available</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Gainers & Losers -->
+        <div class="row g-4 mb-5">
+            <!-- Top Gainers -->
+            <div class="col-lg-6 wow fadeInUp" data-wow-delay="0.1s">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">Top Gainers</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Price</th>
+                                        <th>Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (locals.topGainers && topGainers.length > 0) { %>
+                                        <% topGainers.forEach(function(stock) { %>
+                                            <tr>
+                                                <td><%= stock.symbol %></td>
+                                                <td>$<%= stock.current_price.toFixed(2) %></td>
+                                                <td class="text-success">+<%= stock.change_percent.toFixed(2) %>%</td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="3" class="text-center">No data available</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Losers -->
+            <div class="col-lg-6 wow fadeInUp" data-wow-delay="0.3s">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-danger text-white">
+                        <h4 class="mb-0">Top Losers</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Price</th>
+                                        <th>Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (locals.topLosers && topLosers.length > 0) { %>
+                                        <% topLosers.forEach(function(stock) { %>
+                                            <tr>
+                                                <td><%= stock.symbol %></td>
+                                                <td>$<%= stock.current_price.toFixed(2) %></td>
+                                                <td class="text-danger"><%= stock.change_percent.toFixed(2) %>%</td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="3" class="text-center">No data available</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Analysis -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Market Analysis</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <% if (marketAnalysis && marketAnalysis.length > 0) { %>
+                            <% marketAnalysis.forEach(analysis => { %>
+                                <div class="mb-4 pb-4 border-bottom">
+                                    <h5><%= analysis.title %></h5>
+                                    <p class="text-muted mb-2">
+                                        <small>
+                                            <i class="far fa-calendar-alt me-1"></i> 
+                                            <%= new Date(analysis.published_at).toLocaleDateString() %> | 
+                                            <i class="far fa-user me-1"></i> 
+                                            <%= analysis.author %>
+                                        </small>
+                                    </p>
+                                    <p><%= analysis.summary %></p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="badge bg-info me-2"><%= analysis.category %></span>
+                                            <% analysis.tags.split(',').forEach(tag => { %>
+                                                <span class="badge bg-secondary me-1"><%= tag.trim() %></span>
+                                            <% }); %>
+                                        </div>
+                                        <a href="/stock/analysis/<%= analysis.id %>" class="btn btn-sm btn-outline-primary">Read Full Analysis</a>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="text-center py-4">
+                                <p>No market analysis available at the moment.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Tools -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Analysis Tools</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                                        <h5>Technical Analysis</h5>
+                                        <p>Access powerful technical indicators and chart patterns to identify potential entry and exit points.</p>
+                                        <a href="/stock/tools/technical" class="btn btn-outline-primary">Access Tool</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-calculator fa-3x text-primary mb-3"></i>
+                                        <h5>Fundamental Analysis</h5>
+                                        <p>Evaluate companies based on financial statements, industry position, and economic indicators.</p>
+                                        <a href="/stock/tools/fundamental" class="btn btn-outline-primary">Access Tool</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-robot fa-3x text-primary mb-3"></i>
+                                        <h5>AI Predictions</h5>
+                                        <p>Get AI-powered price predictions and trend forecasts based on historical data and market sentiment.</p>
+                                        <a href="/stock/tools/ai-predictions" class="btn btn-outline-primary">Access Tool</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %> 

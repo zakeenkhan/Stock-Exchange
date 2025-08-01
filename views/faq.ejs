@@ -1,0 +1,76 @@
+<%- include('partials/header', { title: 'FAQs', activeNav: 'faq', showBackButton: true }) %>
+
+<!-- FAQs Start -->
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="text-center mx-auto pb-5 wow fadeInUp" data-wow-delay="0.2s" style="max-width: 800px;">
+            <h4 class="text-primary">FAQs</h4>
+            <h1 class="display-5 mb-4">Frequently Asked Questions</h1>
+            <p class="mb-0">Get answers to your most pressing questions about our stock market platform. We've compiled a list of frequently asked questions to help you better understand our services and features.</p>
+        </div>
+        
+        <div class="row g-5 align-items-center">
+            <div class="col-lg-6 wow fadeInLeft" data-wow-delay="0.2s">
+                <div class="accordion accordion-flush bg-light rounded" id="faqAccordion">
+                    <% if (faqs && faqs.length > 0) { %>
+                        <% faqs.forEach((faq, index) => { %>
+                            <div class="accordion-item border-0 mb-3">
+                                <h2 class="accordion-header" id="heading<%= index %>">
+                                    <button class="accordion-button collapsed bg-white shadow-sm rounded-3 mb-2" type="button" 
+                                            data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>" 
+                                            aria-expanded="<%= index === 0 ? 'true' : 'false' %>" 
+                                            aria-controls="collapse<%= index %>">
+                                        <i class="fas fa-question-circle text-primary me-2"></i>
+                                        <%= faq.question %>
+                                    </button>
+                                </h2>
+                                <div id="collapse<%= index %>" 
+                                     class="accordion-collapse collapse <%= index === 0 ? 'show' : '' %>" 
+                                     aria-labelledby="heading<%= index %>" 
+                                     data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body bg-white rounded-3 p-4">
+                                        <p class="mb-0"><%= faq.answer %></p>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5>No FAQs Available</h5>
+                            <p class="text-muted">Check back later for frequently asked questions.</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 wow fadeInRight" data-wow-delay="0.4s">
+                <div class="position-relative h-100">
+                   
+                    <div class="position-absolute bottom-0 end-0 p-4 bg-white rounded-3 shadow-sm d-none d-md-block" style="width: 80%; transform: translate(20px, 20px);">
+                        <h5 class="text-primary mb-2">Still have questions?</h5>
+                        <p class="mb-3">Can't find what you're looking for? Our support team is here to help.</p>
+                        <a href="/contact" class="btn btn-primary btn-sm">
+                            <i class="fas fa-headset me-2"></i>Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <div class="bg-light p-4 rounded-3">
+                    <h4 class="mb-3">Didn't find your answer?</h4>
+                    <p class="text-muted mb-4">We're here to help. Get in touch with our support team for personalized assistance.</p>
+                    <a href="/contact" class="btn btn-primary btn-lg rounded-pill px-4">
+                        <i class="fas fa-envelope me-2"></i>Contact Us
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- FAQs End -->
+
+<%- include('partials/footer') %>

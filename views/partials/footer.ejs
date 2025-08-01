@@ -1,0 +1,115 @@
+    <!-- Footer Start -->
+    <div class="container-fluid bg-dark text-white-50 footer pt-5">
+        <div class="container py-5">
+            <div class="row g-5">
+                <div class="col-md-6 col-lg-3 wow fadeIn" data-wow-delay="0.1s">
+                    <a href="/" class="d-inline-block mb-3">
+                        <h1 class="text-white"><i class="fas fa-search-dollar me-3"></i>Stocker</h1>
+                    </a>
+                    <p class="mb-0">Your trusted partner for stock market success. Track, analyze, and optimize your investments with our comprehensive tools.</p>
+                </div>
+                <div class="col-md-6 col-lg-3 wow fadeIn" data-wow-delay="0.3s">
+                    <h5 class="text-white mb-4">Get In Touch</h5>
+                    <p><i class="fa fa-map-marker-alt me-3"></i>G-11 Markaz Islamabad</p>
+                    <p><i class="fa fa-phone-alt me-3"></i>+92-3439644996</p>
+                    <p><i class="fa fa-envelope me-3"></i>Zakeenkhann@gmail.com</p>
+                    <div class="d-flex pt-2">
+                        <a class="btn btn-outline-light btn-social" href=""><i class="fab fa-twitter"></i></a>
+                        <a class="btn btn-outline-light btn-social" href=""><i class="fab fa-facebook-f"></i></a>
+                        <a class="btn btn-outline-light btn-social" href=""><i class="fab fa-youtube"></i></a>
+                        <a class="btn btn-outline-light btn-social" href=""><i class="fab fa-instagram"></i></a>
+                        <a class="btn btn-outline-light btn-social" href=""><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 wow fadeIn" data-wow-delay="0.5s">
+                    <h5 class="text-white mb-4">Quick Links</h5>
+                    <div class="d-flex flex-column">
+                        <a class="btn btn-link" href="/about">About Us</a>
+                        <a class="btn btn-link" href="/contact">Contact Us</a>
+                        <a class="btn btn-link" href="/service">Our Services</a>
+                        <a class="btn btn-link" href="/privacy">Privacy Policy</a>
+                        <a class="btn btn-link" href="/terms">Terms & Condition</a>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 wow fadeIn" data-wow-delay="0.7s">
+                    <h5 class="text-white mb-4">Newsletter</h5>
+                    <p>Subscribe to our newsletter for market updates and investment tips.</p>
+                    <div class="position-relative w-100 mt-3">
+                        <input class="form-control border-0 rounded-pill w-100 ps-4 pe-5" type="text" placeholder="Your Email" style="height: 48px;">
+                        <button type="button" class="btn shadow-none position-absolute top-0 end-0 mt-1 me-2"><i class="fa fa-paper-plane text-primary fs-4"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Back Button Row -->
+            <div class="row mt-5 wow fadeInUp" data-wow-delay="0.2s">
+                <div class="col-12 text-center">
+                    <button onclick="window.history.back()" class="btn btn-primary btn-lg rounded-pill px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Go Back
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+        <div class="container">
+            <div class="copyright">
+                <div class="row">
+                    <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                        &copy; <a href="/">Stocker</a>, All Right Reserved.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Footer End -->
+
+    <!-- Floating Back to Top Button -->
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square rounded-circle back-to-top">
+        <i class="bi bi-arrow-up"></i>
+    </a>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/lib/wow/wow.min.js"></script>
+    <script src="/lib/easing/easing.min.js"></script>
+    <script src="/lib/waypoints/waypoints.min.js"></script>
+    <script src="/lib/counterup/counterup.min.js"></script>
+    <script src="/lib/owlcarousel/owl.carousel.min.js"></script>
+    <script src="/lib/lightbox/js/lightbox.min.js"></script>
+
+    <!-- Template Javascript -->
+    <script src="/js/main.js"></script>
+    
+    <!-- Back Button Script -->
+    <script>
+        // Show/hide back button based on history
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show back button if there's history
+            const backButton = document.querySelector('.back-button');
+            if (backButton && window.history.length > 1) {
+                backButton.style.display = 'block';
+            }
+            
+            // Smooth scroll to top for back-to-top button
+            document.querySelector('.back-to-top').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Show/hide back-to-top button on scroll
+            window.addEventListener('scroll', function() {
+                const backToTop = document.querySelector('.back-to-top');
+                if (window.pageYOffset > 300) {
+                    backToTop.style.display = 'block';
+                } else {
+                    backToTop.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

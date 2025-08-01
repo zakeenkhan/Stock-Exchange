@@ -1,0 +1,257 @@
+<%- include('partials/header', { title: 'Account Settings - Stoker', activeNav: 'account' }) %>
+
+<div class="container py-5">
+    <div class="row">
+        <!-- Sidebar Navigation -->
+        <div class="col-md-3 mb-4">
+            <div class="list-group">
+                <a href="#profile" class="list-group-item list-group-item-action active" data-bs-toggle="tab" data-bs-target="#profile" role="tab">
+                    <i class="fas fa-user-circle me-2"></i> Profile
+                </a>
+                <a href="#password" class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#password" role="tab">
+                    <i class="fas fa-key me-2"></i> Password
+                </a>
+                <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#notifications" role="tab">
+                    <i class="fas fa-bell me-2"></i> Notifications
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Account Settings</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <!-- Profile Tab -->
+                        <div class="tab-pane fade show active" id="profile" role="tabpanel">
+                            <form id="profileForm">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" id="name" name="name" value="<%= user.name || '' %>">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="<%= user.email || '' %>" disabled>
+                                    <small class="text-muted">Contact support to change your email address</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bio" class="form-label">Bio</label>
+                                    <textarea class="form-control" id="bio" name="bio" rows="3"><%= user.bio || '' %></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Profile</button>
+                            </form>
+                        </div>
+
+                        <!-- Password Tab -->
+                        <div class="tab-pane fade" id="password" role="tabpanel">
+                            <form id="passwordForm">
+                                <% if (!user.password) { %>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i> Please set a password for your account.
+                                    </div>
+                                <% } %>
+                                <div class="mb-3">
+                                    <label for="currentPassword" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="currentPassword" name="currentPassword" <%= !user.password ? '' : 'required' %>>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newPassword" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+                                    <div id="passwordHelp" class="form-text">
+                                        Password must be at least 8 characters long
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <%= !user.password ? 'Set Password' : 'Update Password' %>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Notifications Tab -->
+                        <div class="tab-pane fade" id="notifications" role="tabpanel">
+                            <form id="notificationsForm">
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="emailNotifications" name="emailNotifications" <%= user.email_notifications ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="emailNotifications">Email Notifications</label>
+                                </div>
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="priceAlerts" name="priceAlerts" <%= user.price_alerts ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="priceAlerts">Price Alerts</label>
+                                </div>
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter" <%= user.newsletter ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="newsletter">Subscribe to Newsletter</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Preferences</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto" id="toastTitle">Success</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Initialize toast
+    const toastEl = document.getElementById('toast');
+    const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+
+    // Show toast message
+    function showToast(title, message, type = 'success') {
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+        
+        // Update toast style based on type
+        const toastHeader = toastEl.querySelector('.toast-header');
+        toastHeader.className = `toast-header text-white bg-${type}`;
+        
+        toast.show();
+    }
+
+    // Handle profile form submission
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(profileForm);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/account/update-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast('Success', 'Profile updated successfully!', 'success');
+                } else {
+                    throw new Error(result.message || 'Failed to update profile');
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showToast('Error', error.message || 'An error occurred', 'danger');
+            }
+        });
+    }
+
+    // Handle password form submission
+    const passwordForm = document.getElementById('passwordForm');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                showToast('Error', 'Passwords do not match', 'danger');
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                showToast('Error', 'Password must be at least 8 characters long', 'danger');
+                return;
+            }
+            
+            const formData = new FormData(passwordForm);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/account/set-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast('Success', 'Password updated successfully!', 'success');
+                    passwordForm.reset();
+                } else {
+                    throw new Error(result.message || 'Failed to update password');
+                }
+            } catch (error) {
+                console.error('Error updating password:', error);
+                showToast('Error', error.message || 'An error occurred', 'danger');
+            }
+        });
+    }
+
+    // Handle notifications form submission
+    const notificationsForm = document.getElementById('notificationsForm');
+    if (notificationsForm) {
+        notificationsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(notificationsForm);
+            const data = {
+                emailNotifications: formData.get('emailNotifications') === 'on',
+                priceAlerts: formData.get('priceAlerts') === 'on',
+                newsletter: formData.get('newsletter') === 'on'
+            };
+            
+            try {
+                const response = await fetch('/account/update-notifications', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast('Success', 'Notification preferences updated!', 'success');
+                } else {
+                    throw new Error(result.message || 'Failed to update preferences');
+                }
+            } catch (error) {
+                console.error('Error updating preferences:', error);
+                showToast('Error', error.message || 'An error occurred', 'danger');
+            }
+        });
+    }
+});
+</script>
+
+<%- include('partials/footer') %>

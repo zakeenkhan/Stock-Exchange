@@ -1,0 +1,27 @@
+<%- include('partials/header') %>
+
+<h2>Price Alerts</h2>
+
+<form action="/price-alerts/create" method="POST">
+  <input type="number" name="user_id" placeholder="User ID" required />
+  <input type="number" name="stock_id" placeholder="Stock ID" required />
+  <select name="alert_type" required>
+    <option value="above">Above</option>
+    <option value="below">Below</option>
+    <option value="percent_change">Percent Change</option>
+  </select>
+  <input type="number" step="0.01" name="target_price" placeholder="Target Price" required />
+  <button type="submit">Create Alert</button>
+</form>
+
+<ul>
+  <% alerts.forEach(alert => { %>
+    <li>
+      <strong><%= alert.user_name %></strong> wants alert for
+      <strong><%= alert.stock_symbol %></strong> when
+      <%= alert.alert_type %> <%= alert.target_price %>
+    </li>
+  <% }) %>
+</ul>
+
+<%- include('partials/footer') %>

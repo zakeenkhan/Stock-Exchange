@@ -1,0 +1,132 @@
+<%- include('partials/header', { title: 'Our Offers', activeNav: 'offer', showBackButton: true }) %>
+
+<!-- Offer Start -->
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="text-center mx-auto pb-5 wow fadeInUp" data-wow-delay="0.2s" style="max-width: 800px;">
+            <h4 class="text-primary">Our Offer</h4>
+            <h1 class="display-5 mb-4">Benefits We Offer</h1>
+            <p class="mb-0">Discover the exclusive benefits and services we offer to help you maximize your investment potential and achieve your financial goals.</p>
+        </div>
+        
+        <div class="row g-5 align-items-center">
+            <div class="col-xl-5 wow fadeInLeft" data-wow-delay="0.2s">
+                <div class="nav nav-pills flex-column gap-3" id="offerTabs" role="tablist">
+                    <% if (offers && offers.length > 0) { %>
+                        <% offers.forEach((offer, index) => { %>
+                            <button class="nav-link text-start p-4 rounded-3 shadow-sm <%= index === 0 ? 'active' : '' %>" 
+                                    id="<%= offer.id %>-tab" 
+                                    data-bs-toggle="pill" 
+                                    data-bs-target="#<%= offer.id %>" 
+                                    type="button" 
+                                    role="tab" 
+                                    aria-controls="<%= offer.id %>" 
+                                    aria-selected="<%= index === 0 ? 'true' : 'false' %>">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 p-3 rounded-3 me-3">
+                                        <i class="fas <%= ['fa-chart-line', 'fa-chart-pie', 'fa-mobile-alt', 'fa-crown'][index % 4] %> fa-2x text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1"><%= offer.title %></h5>
+                                        <p class="small text-muted mb-0">Learn more about this benefit</p>
+                                    </div>
+                                </div>
+                            </button>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="text-center p-5 bg-light rounded-3">
+                            <i class="fas fa-gift fa-3x text-muted mb-3"></i>
+                            <h5>No Special Offers</h5>
+                            <p class="text-muted">Check back later for our latest offers.</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+            
+            <div class="col-xl-7 wow fadeInRight" data-wow-delay="0.4s">
+                <div class="tab-content bg-white rounded-3 shadow-sm p-4" id="offerTabsContent">
+                    <% if (offers && offers.length > 0) { %>
+                        <% offers.forEach((offer, index) => { %>
+                            <div class="tab-pane fade <%= index === 0 ? 'show active' : '' %>" 
+                                 id="<%= offer.id %>" 
+                                 role="tabpanel" 
+                                 aria-labelledby="<%= offer.id %>-tab">
+                                <div class="row g-4">
+                                    <div class="col-md-7">
+                                        <img src="<%= offer.image %>" class="img-fluid w-100 rounded-3 shadow-sm" alt="<%= offer.title %>">
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
+                                                <i class="fas <%= ['fa-star', 'fa-chart-line', 'fa-mobile-alt', 'fa-crown'][index % 4] %> fa-2x text-primary"></i>
+                                            </div>
+                                            <h2 class="h4 mb-0"><%= offer.title %></h2>
+                                        </div>
+                                        <p class="mb-4"><%= offer.description %></p>
+                                        <div class="d-flex gap-2">
+                                            <a href="/auth/register" class="btn btn-primary rounded-pill px-4">
+                                                Get Started <i class="fas fa-arrow-right ms-2"></i>
+                                            </a>
+                                            <a href="/pricing" class="btn btn-outline-primary rounded-pill px-4">
+                                                View Pricing
+                                            </a>
+                                        </div>
+                                        
+                                        <div class="mt-4 pt-3 border-top">
+                                            <h6 class="text-uppercase text-muted small mb-3">This offer includes:</h6>
+                                            <ul class="list-unstyled">
+                                                <% const features = [
+                                                    '24/7 Customer Support',
+                                                    'Real-time Market Data',
+                                                    'Advanced Charting Tools',
+                                                    'Personal Portfolio Tracking'
+                                                ]; %>
+                                                <% features.forEach(feature => { %>
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                        <%= feature %>
+                                                    </li>
+                                                <% }); %>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional CTA Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="bg-primary bg-opacity-10 p-5 rounded-3 position-relative overflow-hidden">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h3 class="mb-3">Ready to get started?</h3>
+                            <p class="mb-4">Join thousands of investors who trust our platform for their trading needs. Start with a free account today.</p>
+                            <div class="d-flex gap-3">
+                                <a href="/auth/register" class="btn btn-primary rounded-pill px-4">
+                                    Create Free Account
+                                </a>
+                                <a href="/contact" class="btn btn-outline-primary rounded-pill px-4">
+                                    Contact Sales
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 d-none d-lg-block">
+                            <img src="/img/cta-illustration.svg" class="img-fluid" alt="Get Started">
+                        </div>
+                    </div>
+                    <div class="position-absolute end-0 bottom-0 opacity-25" style="font-size: 20rem; line-height: 1; z-index: -1;">
+                        <i class="fas fa-chart-line text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Offer End -->
+
+<%- include('partials/footer') %>

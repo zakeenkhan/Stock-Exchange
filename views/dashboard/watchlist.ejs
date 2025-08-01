@@ -1,0 +1,101 @@
+<%- include('../partials/header', { title: 'My Watchlists', showHero: false, showPageHeader: false }) %>
+
+<div class="container-fluid py-4">
+    <div class="container">
+        <!-- Header with Create Button -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">My Watchlists</h1>
+            <a href="/dashboard/watchlist/new" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Create New Watchlist
+            </a>
+        </div>
+
+        <!-- Watchlists Grid -->
+        <div class="row">
+            <% if (watchlists && watchlists.length > 0) { %>
+                <% watchlists.forEach(watchlist => { %>
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <a href="/lists/<%= watchlist.id %>" class="text-decoration-none">
+                                        <%= watchlist.name %>
+                                    </a>
+                                </h5>
+                                <span class="badge bg-primary"><%= watchlist.stocks ? watchlist.stocks.length : 0 %> stocks</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <% if (watchlist.stocks && watchlist.stocks.length > 0) { %>
+                                    <div class="list-group list-group-flush">
+                                        <% watchlist.stocks.slice(0, 3).forEach(stock => { %>
+                                            <a href="/stock/<%= stock.symbol %>" class="list-group-item list-group-item-action">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong><%= stock.symbol %></strong>
+                                                        <div class="text-muted small"><%= stock.name %></div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div>$<%= parseFloat(stock.current_price).toFixed(2) %></div>
+                                                        <small class="<%= stock.change_percent >= 0 ? 'text-success' : 'text-danger' %>">
+                                                            <%= stock.change_percent >= 0 ? '+' : '' %><%= parseFloat(stock.change_percent).toFixed(2) %>%
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        <% }); %>
+                                    </div>
+                                    <% if (watchlist.stocks.length > 3) { %>
+                                        <div class="text-center py-2 border-top">
+                                            <a href="/lists/<%= watchlist.id %>" class="text-decoration-none">
+                                                View all <%= watchlist.stocks.length %> stocks <i class="fas fa-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    <% } %>
+                                <% } else { %>
+                                    <div class="text-center p-4 text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-2"></i>
+                                        <p class="mb-0">No stocks in this watchlist</p>
+                                        <a href="/stocks" class="btn btn-sm btn-outline-primary mt-2">
+                                            Add Stocks
+                                        </a>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="card-footer bg-transparent d-flex justify-content-between">
+                                <small class="text-muted">
+                                    Created <%= new Date(watchlist.created_at).toLocaleDateString() %>
+                                </small>
+                                <div>
+                                    <a href="/dashboard/watchlist/<%= watchlist.id %>/edit" class="btn btn-sm btn-outline-secondary me-1">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="/dashboard/watchlist/<%= watchlist.id %>/delete" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                onclick="return confirm('Are you sure you want to delete this watchlist?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center p-5">
+                            <i class="fas fa-list-ul fa-4x text-muted mb-4"></i>
+                            <h3>No Watchlists Yet</h3>
+                            <p class="text-muted mb-4">You haven't created any watchlists yet. Start by creating your first one!</p>
+                            <a href="/dashboard/watchlist/new" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i> Create Your First Watchlist
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

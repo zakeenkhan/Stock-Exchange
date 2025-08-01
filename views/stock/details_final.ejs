@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/header') %>
+    <title><%= stock && stock.rows.length > 0 ? stock.rows[0].company_name : 'Stock Details' %></title>
+    <style>
+        .price-change.positive { color: #28a745; }
+        .price-change.negative { color: #dc3545; }
+        .stat-label { font-weight: bold; }
+    </style>
+</head>
+<body data-historical='<%- historicalData ? JSON.stringify(historicalData) : "null" %>'>
+    <%- include('../partials/header') %>
+
+    <div class="container mt-5">
+        <% if (stock && stock.rows && stock.rows.length > 0) { %>
+            <% const stockData = stock.rows[0]; %>
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Stock Header -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h1 class="card-title"><%= stockData.company_name %> (<%= stockData.symbol %>)</h1>
+                            <h3 class="card-subtitle mb-2 text-muted">$<%= parseFloat(stockData.current_price).toFixed(2) %></h3>
+                            <% 
+                                const change = parseFloat(stockData.change_percent);
+                                const isChangeAvailable = !isNaN(change);
+                                const isPositive = isChangeAvailable && change >= 0;
+                            %>
+                            <p class="card-text price-change <%= isPositive ? 'positive' : 'negative' %>">
+                                <% if (isChangeAvailable) { %>
+                                    <%= (isPositive ? '+' : '') + change.toFixed(2) + '%' %>
+                                <% } else { %>
+                                    N/A
+                                <% } %>
+                            </p>
+                            <p><strong>Market Cap:</strong> <%= (stockData.market_cap || 0).toLocaleString() %></p>
+                            <p><strong>Volume:</strong> <%= (stockData.volume || 0).toLocaleString() %></p>
+                        </div>
+                    </div>
+
+                    <!-- News Section -->
+                    <div class="card">
+                        <div class="card-header">Recent News</div>
+                        <div class="card-body">
+                            <% if (news && news.rows && news.rows.length > 0) { %>
+                                <ul class="list-group list-group-flush">
+                                    <% news.rows.forEach(article => { %>
+                                        <li class="list-group-item">
+                                            <h5><a href="<%= article.url %>" target="_blank"><%= article.title %></a></h5>
+                                            <p><small><%= new Date(article.published_at).toLocaleDateString() %></small></p>
+                                            <p><%= article.summary %></p>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %>
+                                <p>No news available for this stock.</p>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <!-- Key Statistics (Analytics) -->
+                    <div class="card mb-4">
+                        <div class="card-header">Key Statistics</div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between py-1">
+                                <span class="stat-label">P/E Ratio</span>
+                                <span><%= analytics.pe_ratio ? analytics.pe_ratio.toFixed(2) : 'N/A' %></span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1">
+                                <span class="stat-label">52-Week High</span>
+                                <span>$<%= analytics.fifty_two_week_high ? parseFloat(analytics.fifty_two_week_high).toFixed(2) : 'N/A' %></span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1">
+                                <span class="stat-label">52-Week Low</span>
+                                <span>$<%= analytics.fifty_two_week_low ? parseFloat(analytics.fifty_two_week_low).toFixed(2) : 'N/A' %></span>
+                            </div>
+                             <div class="d-flex justify-content-between py-1">
+                                <span class="stat-label">Avg. Volume</span>
+                                <span><%= analytics.avg_volume ? analytics.avg_volume.toLocaleString() : 'N/A' %></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add to Watchlist -->
+                    <div class="card mb-4 mt-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Add to Watchlist</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="addToWatchlistForm" class="mb-3">
+                                <div class="input-group">
+                                    <select class="form-select" id="watchlistSelect" name="list_id" required>
+                                        <option value="" disabled selected>Select a watchlist</option>
+                                        <% if (watchlists && watchlists.length > 0) { %>
+                                            <% watchlists.forEach(list => { %>
+                                                <option value="<%= list.id %>"><%= list.name %></option>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <option disabled>No watchlists found. Create one in your dashboard.</option>
+                                        <% } %>
+                                    </select>
+                                    <input type="hidden" name="stock_id" value="<%= stock.symbol || stock.ticker %>">
+                                    <button type="submit" class="btn btn-primary" id="addToWatchlistBtn" <%= (watchlists && watchlists.length > 0) ? '' : 'disabled' %>>
+                                        <span id="addToWatchlistText">Add to Watchlist</span>
+                                        <span id="addToWatchlistSpinner" class="spinner-border spinner-border-sm d-none" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </span>
+                                    </button>
+                                </div>
+                            </form>
+                            <div id="watchlistMessage" class="alert d-none" role="alert"></div>
+                        </div>
+                    </div>
+
+                    <!-- Add to Portfolio -->
+                    <div class="card">
+                        <div class="card-header">Add to Portfolio</div>
+                        <div class="card-body">
+                             <% if (user) { %>
+                                <form id="add-to-portfolio-form" data-current-price="<%= stockData.current_price %>">
+                                    <input type="hidden" name="stock_id" value="<%= stockData.id %>">
+                                    <div class="form-group">
+                                        <label for="portfolio_id">Select Portfolio</label>
+                                        <select class="form-control" id="portfolio_id" name="portfolio_id" <%= !portfolios || portfolios.length === 0 ? 'disabled' : '' %>>
+                                            <% if (portfolios && portfolios.length > 0) { %>
+                                                <% portfolios.forEach(portfolio => { %>
+                                                    <option value="<%= portfolio.id %>"><%= portfolio.name %></option>
+                                                <% }); %>
+                                            <% } else { %>
+                                                <option disabled>No portfolios found</option>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    <div class="form-group mt-2">
+                                        <label for="quantity">Quantity</label>
+                                        <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1" required <%= !portfolios || portfolios.length === 0 ? 'disabled' : '' %>>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary mt-2" <%= !portfolios || portfolios.length === 0 ? 'disabled' : '' %>>Add to Portfolio</button>
+                                </form>
+                            <% } else { %>
+                                <p><a href="/auth/login">Log in</a> to manage portfolios.</p>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">Price History</div>
+                    <div class="card-body">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="alert alert-danger" role="alert">
+            Stock not found.
+        </div>
+    <% } %>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<%- include('../partials/footer') %>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle watchlist form submission
+        document.getElementById('addToWatchlistForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const submitBtn = document.getElementById('addToWatchlistBtn');
+            const submitText = document.getElementById('addToWatchlistText');
+            const spinner = document.getElementById('addToWatchlistSpinner');
+            const messageDiv = document.getElementById('watchlistMessage');
+            
+            // Reset message and UI state
+            messageDiv.className = 'alert d-none';
+            messageDiv.textContent = '';
+            submitBtn.disabled = true;
+            submitText.textContent = 'Adding...';
+            spinner.classList.remove('d-none');
+            
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/lists/add-stock', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        list_id: formData.get('list_id'),
+                        stock_id: formData.get('stock_id')
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showMessage('Stock added to watchlist!', 'success');
+                    form.reset();
+                } else {
+                    showMessage(result.message || 'Failed to add to watchlist', 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('An error occurred. Please try again.', 'danger');
+            } finally {
+                submitBtn.disabled = false;
+                submitText.textContent = 'Add to Watchlist';
+                spinner.classList.add('d-none');
+            }
+            
+            function showMessage(message, type) {
+                messageDiv.textContent = message;
+                messageDiv.className = `alert alert-${type} mt-2`;
+                messageDiv.classList.remove('d-none');
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    messageDiv.classList.add('d-none');
+                }, 5000);
+            }
+        });
+
+        // Portfolio Form Handler
+        const portfolioForm = document.getElementById('add-to-portfolio-form');
+        if (portfolioForm) {
+            portfolioForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const stockId = e.target.stock_id.value;
+                const portfolioId = e.target.portfolio_id.value;
+                const quantity = e.target.quantity.value;
+                const purchasePrice = portfolioForm.dataset.currentPrice;
+                const purchaseDate = new Date().toISOString();
+
+                try {
+                    const response = await fetch('/stock/api/portfolio/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            portfolio_id: portfolioId, 
+                            stock_id: stockId, 
+                            quantity: quantity, 
+                            purchase_price: purchasePrice,
+                            purchase_date: purchaseDate
+                        })
+                    });
+                    const result = await response.json();
+                    alert(result.message || result.error || 'An error occurred.');
+                } catch (err) {
+                    console.error('Error adding to portfolio:', err);
+                    alert('An error occurred.');
+                }
+            });
+        }
+
+        // Chart Rendering Logic
+        const historicalDataString = document.body.dataset.historical;
+        if (historicalDataString && historicalDataString !== 'null') {
+            const historicalData = JSON.parse(historicalDataString);
+            const priceChartCanvas = document.getElementById('priceChart');
+            if (priceChartCanvas) {
+                const ctx = priceChartCanvas.getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: historicalData.labels,
+                        datasets: [{
+                            label: 'Price (USD)',
+                            data: historicalData.prices,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

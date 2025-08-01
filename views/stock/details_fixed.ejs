@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/header') %>
+    <title><%= stock && stock.rows.length > 0 ? stock.rows[0].company_name : 'Stock Details' %></title>
+    <style>
+        .price-change.positive { color: #28a745; }
+        .price-change.negative { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+
+    <div class="container mt-5">
+        <% if (stock && stock.rows && stock.rows.length > 0) { %>
+            <% const stockData = stock.rows[0]; %>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h1 class="card-title"><%= stockData.company_name %> (<%= stockData.symbol %>)</h1>
+                            <h3 class="card-subtitle mb-2 text-muted">$<%= parseFloat(stockData.current_price).toFixed(2) %></h3>
+                            <% 
+                                const change = parseFloat(stockData.change_percent || 0);
+                                const isPositive = change >= 0;
+                            %>
+                            <p class="card-text price-change <%= isPositive ? 'positive' : 'negative' %>">
+                                <%= isPositive ? '+' : '' %><%= change.toFixed(2) %>%
+                            </p>
+                            <p><strong>Market Cap:</strong> <%= (stockData.market_cap || 0).toLocaleString() %></p>
+                            <p><strong>Volume:</strong> <%= (stockData.volume || 0).toLocaleString() %></p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">Recent News</div>
+                        <div class="card-body">
+                            <% if (news && news.rows && news.rows.length > 0) { %>
+                                <ul class="list-group list-group-flush">
+                                    <% news.rows.forEach(article => { %>
+                                        <li class="list-group-item">
+                                            <h5><a href="<%= article.url %>" target="_blank"><%= article.title %></a></h5>
+                                            <p><small><%= new Date(article.published_at).toLocaleDateString() %></small></p>
+                                            <p><%= article.summary %></p>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            <% } else { %>
+                                <p>No news available for this stock.</p>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">Add to Watchlist</div>
+                        <div class="card-body">
+                            <% if (user) { %>
+                                <form action="/user/lists/add" method="POST">
+                                    <input type="hidden" name="stock_id" value="<%= stockData.id %>">
+                                    <div class="form-group">
+                                        <label for="listSelect">Select a List</label>
+                                        <select class="form-control" id="listSelect" name="list_id">
+                                            <% if (lists && lists.length > 0) { %>
+                                                <% lists.forEach(list => { %>
+                                                    <option value="<%= list.id %>"><%= list.name %></option>
+                                                <% }); %>
+                                            <% } else { %>
+                                                <option disabled>You have no watchlists.</option>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary mt-2">Add</button>
+                                </form>
+                            <% } else { %>
+                                <p><a href="/auth/login">Log in</a> to add stocks to your watchlist.</p>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="alert alert-danger" role="alert">
+                Stock not found.
+            </div>
+        <% } %>
+    </div>
+
+    <%- include('../partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<%- include('../partials/header', { title: 'Price Alerts', activeNav: 'dashboard', showHero: false }) %>
+
+<div class="container-fluid py-5">
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-5 mb-0">Price Alerts</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAlertModal">
+                <i class="fas fa-plus-circle me-2"></i> Create New Alert
+            </button>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">My Alerts</h4>
+            </div>
+            <div class="card-body p-4">
+                <% if (alerts && alerts.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Name</th>
+                                    <th>Alert Type</th>
+                                    <th>Target Price</th>
+                                    <th>Current Price</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% alerts.forEach(alert => { %>
+                                    <tr>
+                                        <td><strong><%= alert.symbol %></strong></td>
+                                        <td><%= alert.name %></td>
+                                        <td>
+                                            <% if (alert.alert_type === 'above') { %>
+                                                <span class="badge bg-success">Price Above</span>
+                                            <% } else if (alert.alert_type === 'below') { %>
+                                                <span class="badge bg-danger">Price Below</span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary">Price At</span>
+                                            <% } %>
+                                        </td>
+                                        <td>$<%= alert.price_target.toFixed(2) %></td>
+                                        <td>$<%= alert.current_price.toFixed(2) %></td>
+                                        <td>
+                                            <% if ((alert.alert_type === 'above' && alert.current_price >= alert.price_target) || 
+                                                  (alert.alert_type === 'below' && alert.current_price <= alert.price_target) ||
+                                                  (alert.alert_type === 'at' && Math.abs(alert.current_price - alert.price_target) < 0.01)) { %>
+                                                <span class="badge bg-warning">Triggered</span>
+                                            <% } else { %>
+                                                <span class="badge bg-info">Pending</span>
+                                            <% } %>
+                                        </td>
+                                        <td><%= new Date(alert.created_at).toLocaleDateString() %></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteAlert('<%= alert.id %>', '<%= alert.symbol %>')">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="text-center py-4">
+                        <i class="fas fa-bell fa-3x text-primary mb-3"></i>
+                        <h4>No Price Alerts</h4>
+                        <p class="mb-4">Create alerts to get notified when stocks reach your target prices.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAlertModal">
+                            <i class="fas fa-plus-circle me-2"></i> Create Alert
+                        </button>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">How Alerts Work</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center mb-4 mb-md-0">
+                            <i class="fas fa-bell fa-3x text-primary mb-3"></i>
+                            <h5>Set Your Targets</h5>
+                            <p>Create alerts for price levels you want to monitor. Choose from "above," "below," or "at" specific price points.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-4 mb-md-0">
+                            <i class="fas fa-envelope fa-3x text-primary mb-3"></i>
+                            <h5>Get Notified</h5>
+                            <p>Receive email notifications when your target prices are reached. Stay informed even when you're not on the platform.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="fas fa-cog fa-3x text-primary mb-3"></i>
+                            <h5>Manage Your Alerts</h5>
+                            <p>Add, remove, or modify your alerts at any time. We'll keep track of which ones have been triggered.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Alert Modal -->
+<div class="modal fade" id="createAlertModal" tabindex="-1" aria-labelledby="createAlertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="createAlertModalLabel">Create Price Alert</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/dashboard/alerts" method="POST">
+                    <div class="mb-3">
+                        <label for="stockSearch" class="form-label">Search for a Stock</label>
+                        <input type="text" class="form-control" id="stockSearch" placeholder="Enter symbol or company name">
+                    </div>
+                    <div id="searchResults" class="mb-3">
+                        <!-- Search results will be displayed here -->
+                    </div>
+                    <div class="mb-3">
+                        <label for="stockSelect" class="form-label">Select Stock</label>
+                        <select class="form-select" id="stockSelect" name="stock_id" required>
+                            <option value="">Select a stock</option>
+                            <!-- Stock options will be populated via AJAX -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="alertType" class="form-label">Alert Type</label>
+                        <select class="form-select" id="alertType" name="alert_type" required>
+                            <option value="">Select alert type</option>
+                            <option value="above">Price Above</option>
+                            <option value="below">Price Below</option>
+                            <option value="at">Price At</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="priceTarget" class="form-label">Target Price ($)</label>
+                        <input type="number" class="form-control" id="priceTarget" name="price_target" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Create Alert</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Delete alert
+    function deleteAlert(alertId, symbol) {
+        if (confirm(`Delete price alert for ${symbol}?`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/dashboard/alerts/${alertId}`;
+            
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'DELETE';
+            
+            form.appendChild(methodInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+    
+    // Stock search functionality
+    document.getElementById('stockSearch').addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            document.getElementById('searchResults').innerHTML = '';
+            return;
+        }
+        
+        // Fetch matching stocks
+        fetch(`/stock/search?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('searchResults');
+                const selectElement = document.getElementById('stockSelect');
+                
+                // Clear previous results
+                resultsDiv.innerHTML = '';
+                selectElement.innerHTML = '<option value="">Select a stock</option>';
+                
+                if (data.length === 0) {
+                    resultsDiv.innerHTML = '<p class="text-muted">No matching stocks found</p>';
+                    return;
+                }
+                
+                // Create result list
+                const resultsList = document.createElement('ul');
+                resultsList.className = 'list-group';
+                
+                data.forEach(stock => {
+                    // Add to dropdown
+                    const option = document.createElement('option');
+                    option.value = stock.id;
+                    option.textContent = `${stock.symbol} - ${stock.name}`;
+                    selectElement.appendChild(option);
+                    
+                    // Add to results list
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    listItem.innerHTML = `
+                        <div>
+                            <strong>${stock.symbol}</strong> - ${stock.name}
+                        </div>
+                        <span class="badge bg-primary rounded-pill">$${stock.current_price.toFixed(2)}</span>
+                    `;
+                    listItem.addEventListener('click', function() {
+                        selectElement.value = stock.id;
+                        document.getElementById('priceTarget').value = stock.current_price.toFixed(2);
+                    });
+                    resultsList.appendChild(listItem);
+                });
+                
+                resultsDiv.appendChild(resultsList);
+            })
+            .catch(error => {
+                console.error('Error searching stocks:', error);
+                document.getElementById('searchResults').innerHTML = '<p class="text-danger">Error searching stocks</p>';
+            });
+    });
+    
+    // Update price target when stock is selected
+    document.getElementById('stockSelect').addEventListener('change', function() {
+        const stockId = this.value;
+        
+        if (!stockId) {
+            return;
+        }
+        
+        fetch(`/stock/${stockId}`)
+            .then(response => response.json())
+            .then(stock => {
+                document.getElementById('priceTarget').value = stock.current_price.toFixed(2);
+            })
+            .catch(error => {
+                console.error('Error fetching stock details:', error);
+            });
+    });
+</script>
+
+<%- include('../partials/footer') %> 
