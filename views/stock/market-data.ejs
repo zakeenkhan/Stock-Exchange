@@ -7,43 +7,64 @@
             <p class="mb-4">Access up-to-the-minute stock prices, market indices, and financial data to make informed investment decisions.</p>
         </div>
 
+        <!-- Selected Stock Context (if symbol provided) -->
+        <% if (requestedSymbol) { %>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert <%= selectedStock ? 'alert-info' : 'alert-warning' %> d-flex justify-content-between align-items-center">
+                    <div>
+                        <% if (selectedStock) { %>
+                            <strong><%= selectedStock.symbol %></strong> — <%= selectedStock.company_name || selectedStock.name || '' %>
+                            <% if (selectedStock.current_price) { %>
+                                &nbsp;| Price: $<%= Number(selectedStock.current_price).toFixed(2) %>
+                            <% } %>
+                        <% } else { %>
+                            No stock found for symbol "<%= requestedSymbol %>". Showing general market data.
+                        <% } %>
+                    </div>
+                    <div class="ms-3">
+                        <% if (selectedStock) { %>
+                            <a class="btn btn-sm btn-outline-primary" href="/stock/<%= selectedStock.symbol %>">View Details</a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
         <!-- Market Indices -->
         <div class="row g-4 mb-5">
-            <% if (marketData && marketData.indices) { %>
-                <% marketData.indices.forEach(function(index) { %>
-                    <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body p-4">
-                                <h4 class="card-title mb-3"><%= index.name %></h4>
-                                <h2 class="mb-2"><%= index.value %></h2>
-                                <span class="badge <%= index.change.startsWith('+') ? 'bg-success' : 'bg-danger' %>">
-                                    <%= index.change %>
-                                </span>
-                            </div>
-                        </div>
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0">Market Indices</h4>
                     </div>
-                <% }); %>
-            <% } else { %>
-                <div class="col-12 text-center">
-                    <p>Market data is currently unavailable. Please try again later.</p>
-                </div>
-            <% } %>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Value</th>
+                                        <th>Change</th>
+                                        <th>Last Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (indices && indices.length) { %>
                                         <% indices.forEach(index => { %>
                                             <tr>
                                                 <td><strong><%= index.name %></strong></td>
-                                                <td><%= index.value.toFixed(2) %></td>
-                                                <td class="<%= index.change >= 0 ? 'text-success' : 'text-danger' %>">
-                                                    <%= index.change >= 0 ? '+' : '' %><%= index.change.toFixed(2) %>
+                                                <td><%= Number(index.value).toFixed(2) %></td>
+                                                <td class="<%= (Number(index.change_percent) || 0) >= 0 ? 'text-success' : 'text-danger' %>">
+                                                    <%= (Number(index.change_percent) || 0) >= 0 ? '+' : '' %><%= (Number(index.change_percent) || 0).toFixed(2) %>%
                                                 </td>
-                                                <td class="<%= index.percent_change >= 0 ? 'text-success' : 'text-danger' %>">
-                                                    <%= index.percent_change >= 0 ? '+' : '' %><%= index.percent_change.toFixed(2) %>%
-                                                </td>
-                                                <td><%= new Date(index.last_updated).toLocaleString() %></td>
+                                                <td><%= index.last_updated ? new Date(index.last_updated).toLocaleString() : 'N/A' %></td>
                                             </tr>
                                         <% }); %>
                                     <% } else { %>
                                         <tr>
-                                            <td colspan="5" class="text-center">No market indices data available</td>
+                                            <td colspan="4" class="text-center">No market indices data available</td>
                                         </tr>
                                     <% } %>
                                 </tbody>
@@ -78,12 +99,10 @@
                                 <thead>
                                     <tr>
                                         <th>Symbol</th>
-                                        <th>Name</th>
+                                        <th>Company</th>
                                         <th>Price</th>
-                                        <th>Change</th>
                                         <th>% Change</th>
                                         <th>Market Cap</th>
-                                        <th>Volume</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -92,33 +111,39 @@
                                         <% topStocks.forEach(stock => { %>
                                             <tr>
                                                 <td><strong><%= stock.symbol %></strong></td>
-                                                <td><%= stock.name %></td>
-                                                <td>$<%= stock.current_price.toFixed(2) %></td>
-                                                <td class="<%= stock.price_change >= 0 ? 'text-success' : 'text-danger' %>">
-                                                    <%= stock.price_change >= 0 ? '+' : '' %><%= stock.price_change.toFixed(2) %>
+                                                <td><%= stock.company_name || stock.name || 'N/A' %></td>
+                                                <td>$<%= (Number(stock.current_price) || 0).toFixed(2) %></td>
+                                                <td class="<%= (Number(stock.change_percent) || 0) >= 0 ? 'text-success' : 'text-danger' %>">
+                                                    <%= (Number(stock.change_percent) || 0) >= 0 ? '+' : '' %><%= (Number(stock.change_percent) || 0).toFixed(2) %>%
                                                 </td>
-                                                <td class="<%= stock.percent_change >= 0 ? 'text-success' : 'text-danger' %>">
-                                                    <%= stock.percent_change >= 0 ? '+' : '' %><%= stock.percent_change.toFixed(2) %>%
+                                                <td>
+                                                    <% const mc = Number(stock.market_cap); %>
+                                                    <% if (!Number.isNaN(mc) && mc > 0) { %>
+                                                        <% if (mc >= 1e12) { %>
+                                                            $<%= (mc/1e12).toFixed(2) %>T
+                                                        <% } else if (mc >= 1e9) { %>
+                                                            $<%= (mc/1e9).toFixed(2) %>B
+                                                        <% } else if (mc >= 1e6) { %>
+                                                            $<%= (mc/1e6).toFixed(2) %>M
+                                                        <% } else { %>
+                                                            $<%= mc.toFixed(2) %>
+                                                        <% } %>
+                                                    <% } else { %>
+                                                        N/A
+                                                    <% } %>
                                                 </td>
-                                                <td>$<%= (stock.market_cap / 1000000000).toFixed(2) %>B</td>
-                                                <td><%= (stock.volume / 1000000).toFixed(2) %>M</td>
                                                 <td>
                                                     <div class="btn-group">
-                                                        <button class="btn btn-sm btn-outline-primary" onclick="viewStockDetails('<%= stock.id %>')">
-                                                            <i class="fas fa-chart-line"></i>
-                                                        </button>
-                                                        <% if (typeof user !== 'undefined' && user) { %>
-                                                            <button class="btn btn-sm btn-outline-success" onclick="addToWatchlist('<%= stock.id %>')">
-                                                                <i class="fas fa-plus"></i>
-                                                            </button>
-                                                        <% } %>
+                                                        <a class="btn btn-sm btn-outline-primary" href="/stock/<%= stock.symbol %>">
+                                                            <i class="fas fa-chart-line me-1"></i> View
+                                                        </a>
                                                     </div>
                                                 </td>
                                             </tr>
                                         <% }); %>
                                     <% } else { %>
                                         <tr>
-                                            <td colspan="8" class="text-center">No stock data available</td>
+                                            <td colspan="6" class="text-center">No stock data available</td>
                                         </tr>
                                     <% } %>
                                 </tbody>

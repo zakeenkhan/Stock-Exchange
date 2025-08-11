@@ -5,14 +5,22 @@
  * Run this script after setting up your .env file with proper database credentials.
  */
 
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
-const fs = require('fs');
-const path = require('path');
-const dotenv = require('dotenv');
+import pg from 'pg';
+import bcrypt from 'bcrypt';
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ESM __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Load environment variables
 dotenv.config();
+
+const { Pool } = pg;
 
 // Create connection pool with connection timeout and retry logic
 const pool = new Pool({
@@ -25,12 +33,8 @@ const pool = new Pool({
   connectionTimeoutMillis: 10000,
 });
 
-// Read schema file
-// Change this line
-const schemaSQL = fs.readFileSync(path.join(__dirname, 'models', 'schema.sql'), 'utf8');
-
-// To this
-// const schemaSQL = fs.readFileSync(path.join(__dirname, 'database', 'schema.sql'), 'utf8');
+// Read schema file from database/schema.sql
+const schemaSQL = fs.readFileSync(path.join(__dirname, 'database', 'schema.sql'), 'utf8');
 
 // Function to hash password
 const hashPassword = async (password) => {

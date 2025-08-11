@@ -129,4 +129,65 @@ router.post('/add-stock', ensureAuthenticated, async (req, res) => {
     }
 });
 
+// Get user's lists (JSON)
+router.get('/api', ensureAuthenticated, async (req, res) => {
+  try {
+    const lists = await db.query(
+      'SELECT id, name, description, created_at FROM lists WHERE user_id = $1 ORDER BY name ASC',
+      [req.user.id]
+    );
+    res.json(lists.rows);
+  } catch (err) {
+    console.error('Error fetching user lists:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch lists' });
+  }
+});
+
+// Add a stock to a list (JSON)
+router.post('/api/add-item', ensureAuthenticated, async (req, res) => {
+  const { list_id, stock_id } = req.body;
+  const user_id = req.user.id;
+
+  if (!list_id || !stock_id) {
+    return res.status(400).json({ success: false, message: 'Missing list_id or stock_id' });
+  }
+
+  try {
+    // Verify the list belongs to the user
+    const listResult = await db.query(
+      'SELECT id FROM lists WHERE id = $1 AND user_id = $2',
+      [list_id, user_id]
+    );
+    if (listResult.rows.length === 0) {
+      return res.status(403).json({ success: false, message: 'Unauthorized to modify this list' });
+    }
+
+    // Check if the stock exists
+    const stockResult = await db.query('SELECT id FROM stocks WHERE id = $1', [stock_id]);
+    if (stockResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Stock not found' });
+    }
+
+    // Avoid duplicate
+    const existing = await db.query(
+      'SELECT id FROM list_items WHERE list_id = $1 AND stock_id = $2',
+      [list_id, stock_id]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ success: false, message: 'Stock already in this list' });
+    }
+
+    // Insert
+    await db.query(
+      'INSERT INTO list_items (list_id, stock_id, created_at) VALUES ($1, $2, NOW())',
+      [list_id, stock_id]
+    );
+
+    res.status(201).json({ success: true, message: 'Added to list' });
+  } catch (err) {
+    console.error('Error adding item to list (API):', err);
+    res.status(500).json({ success: false, message: 'Failed to add item to list' });
+  }
+});
+
 export default router;

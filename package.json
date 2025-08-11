@@ -11,6 +11,7 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "migrate": "node scripts/run-migration.js",
+    "db:create": "node scripts/create-database.js",
     "db:setup": "node scripts/setup-db.js",
     "db:seed:initial": "node models/initDb.js",
     "db:seed:history": "node scripts/seed-history.js",
@@ -41,7 +42,8 @@
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "nodemon": "^2.0.22",

@@ -24,7 +24,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;500&display=swap" rel="stylesheet">  
 
     <!-- Icon Font Stylesheet -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
 
     <!-- Libraries Stylesheet -->
@@ -198,6 +197,8 @@
     </style>
     <!-- Add this before the closing </head> tag -->
     <script src="/js/theme.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" crossorigin="anonymous" />
     <% if (locals.user && locals.settings && locals.settings.theme) { %>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -239,13 +240,13 @@
                 <div class="navbar-nav ms-auto p-4 p-lg-0">
                     <a href="/" class="nav-item nav-link <%= activeNav === 'home' ? 'active' : '' %>">Home</a>
                     <a href="/about" class="nav-item nav-link <%= activeNav === 'about' ? 'active' : '' %>">About</a>
-                    <a href="/services" class="nav-item nav-link <%= activeNav === 'service' ? 'active' : '' %>">Services</a>
+                    <a href="/service" class="nav-item nav-link <%= activeNav === 'service' ? 'active' : '' %>">Services</a>
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle <%= ['market-data', 'analytics', 'education'].includes(activeNav) ? 'active' : '' %>" data-bs-toggle="dropdown">Stock Market</a>
+                        <a href="#" class="nav-link dropdown-toggle <%= ['all','search','market-data','analytics','education','stock'].includes(activeNav) ? 'active' : '' %>" data-bs-toggle="dropdown">Stock Market</a>
                         <div class="dropdown-menu m-0">
-                            <a href="/stock/market-data" class="dropdown-item">Market Data</a>
-                            <a href="/stock/analytics" class="dropdown-item">Analytics</a>
-                            <a href="/stock/education" class="dropdown-item">Education</a>
+                            <a href="/stock/all" class="dropdown-item">All Stocks</a>
+                            <a href="/stock/search" class="dropdown-item">Search Stocks</a>
+ 
                         </div>
                     </div>
                     <a href="/feature" class="nav-item nav-link <%= activeNav === 'feature' ? 'active' : '' %>">Features</a>
@@ -270,7 +271,7 @@
                                 <h6 class="dropdown-header">Watchlists</h6>
                                 <a href="/dashboard/watchlist" class="dropdown-item d-flex justify-content-between align-items-center">
                                     <span>My Watchlists</span>
-                                    <span class="badge bg-primary rounded-pill"><%= watchlists ? watchlists.length : 0 %></span>
+                                    <span class="badge bg-primary rounded-pill"><%= (locals.watchlists && Array.isArray(locals.watchlists)) ? locals.watchlists.length : 0 %></span>
                                 </a>
                             
                                 <div class="dropdown-divider"></div>

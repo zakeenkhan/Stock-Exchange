@@ -7,6 +7,31 @@
             <p class="mb-4">Advanced market analysis and trading recommendations based on comprehensive data.</p>
         </div>
 
+        <!-- Selected Stock Context (if symbol provided) -->
+        <% if (requestedSymbol) { %>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert <%= selectedStock ? 'alert-info' : 'alert-warning' %> d-flex justify-content-between align-items-center">
+                    <div>
+                        <% if (selectedStock) { %>
+                            <strong><%= selectedStock.symbol %></strong> — <%= selectedStock.company_name || selectedStock.name || '' %>
+                            <% if (selectedStock.current_price) { %>
+                                &nbsp;| Price: $<%= Number(selectedStock.current_price).toFixed(2) %>
+                            <% } %>
+                        <% } else { %>
+                            No stock found for symbol "<%= requestedSymbol %>". Showing general analytics.
+                        <% } %>
+                    </div>
+                    <div class="ms-3">
+                        <% if (selectedStock) { %>
+                            <a class="btn btn-sm btn-outline-primary" href="/stock/<%= selectedStock.symbol %>">View Details</a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
         <!-- Market Overview -->
         <div class="row g-4 mb-5">
             <% if (marketOverview) { %>
@@ -58,7 +83,7 @@
                                 <thead>
                                     <tr>
                                         <th>Symbol</th>
-                                        <th>Name</th>
+                                        <th>Company</th>
                                         <th>Price</th>
                                         <th>Change</th>
                                         <th>Volume</th>
@@ -71,17 +96,18 @@
                                         <% trendingStocks.forEach(function(stock) { %>
                                             <tr>
                                                 <td><strong><%= stock.symbol %></strong></td>
-                                                <td><%= stock.name %></td>
-                                                <td>$<%= stock.current_price.toFixed(2) %></td>
-                                                <td class="<%= stock.change_percent >= 0 ? 'text-success' : 'text-danger' %>">
-                                                    <%= stock.change_percent >= 0 ? '+' : '' %><%= stock.change_percent.toFixed(2) %>%
+                                                <td><%= stock.company_name || stock.name || 'N/A' %></td>
+                                                <td>$<%= (Number(stock.current_price) || 0).toFixed(2) %></td>
+                                                <td class="<%= (Number(stock.change_percent) || 0) >= 0 ? 'text-success' : 'text-danger' %>">
+                                                    <%= (Number(stock.change_percent) || 0) >= 0 ? '+' : '' %><%= (Number(stock.change_percent) || 0).toFixed(2) %>%
                                                 </td>
-                                                <td><%= stock.volume.toLocaleString() %></td>
+                                                <td><%= (Number(stock.volume) || 0).toLocaleString() %></td>
                                                 <td>
-                                                    <i class="fas fa-arrow-<%= stock.trend %> text-<%= stock.trend === 'up' ? 'success' : 'danger' %>"></i>
+                                                    <% const trend = stock.trend || ((Number(stock.change_percent)||0) >= 0 ? 'up' : 'down'); %>
+                                                    <i class="fas fa-arrow-<%= trend %> text-<%= trend === 'up' ? 'success' : 'danger' %>"></i>
                                                 </td>
                                                 <td>
-                                                    <a href="/stock/details/<%= stock.symbol %>" class="btn btn-sm btn-primary">View Details</a>
+                                                    <a href="/stock/<%= stock.symbol %>" class="btn btn-sm btn-primary">View Details</a>
                                                 </td>
                                             </tr>
                                         <% }); %>
@@ -186,31 +212,28 @@
                         <% if (marketAnalysis && marketAnalysis.length > 0) { %>
                             <% marketAnalysis.forEach(analysis => { %>
                                 <div class="mb-4 pb-4 border-bottom">
-                                    <h5><%= analysis.title %></h5>
+                                    <h5><%= analysis.title || (analysis.symbol ? ('Analysis for ' + analysis.symbol) : 'Analysis') %></h5>
                                     <p class="text-muted mb-2">
                                         <small>
                                             <i class="far fa-calendar-alt me-1"></i> 
-                                            <%= new Date(analysis.published_at).toLocaleDateString() %> | 
+                                            <%= analysis.published_at ? new Date(analysis.published_at).toLocaleDateString() : 'N/A' %> | 
                                             <i class="far fa-user me-1"></i> 
-                                            <%= analysis.author %>
+                                            <%= analysis.author || 'System' %>
                                         </small>
                                     </p>
-                                    <p><%= analysis.summary %></p>
+                                    <p><%= analysis.summary || analysis.sentiment || '' %></p>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <span class="badge bg-info me-2"><%= analysis.category %></span>
-                                            <% analysis.tags.split(',').forEach(tag => { %>
-                                                <span class="badge bg-secondary me-1"><%= tag.trim() %></span>
-                                            <% }); %>
+                                            <span class="badge bg-<%= (analysis.sentiment || 'Neutral') === 'Bullish' ? 'success' : ((analysis.sentiment || 'Neutral') === 'Bearish' ? 'danger' : 'secondary') %>"><%= analysis.sentiment || 'Neutral' %></span>
                                         </div>
-                                        <a href="/stock/analysis/<%= analysis.id %>" class="btn btn-sm btn-outline-primary">Read Full Analysis</a>
+                                        <% if (analysis.symbol) { %>
+                                        <a href="/stock/<%= analysis.symbol %>" class="btn btn-sm btn-outline-primary">View Stock</a>
+                                        <% } %>
                                     </div>
                                 </div>
                             <% }); %>
                         <% } else { %>
-                            <div class="text-center py-4">
-                                <p>No market analysis available at the moment.</p>
-                            </div>
+                            <p class="text-center text-muted mb-0">No market analysis available at this time.</p>
                         <% } %>
                     </div>
                 </div>

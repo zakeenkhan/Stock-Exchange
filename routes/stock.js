@@ -5,6 +5,11 @@ import stockEducationController from '../controllers/stockEducationController.js
 
 const router = express.Router();
 
+// Default stock route: redirect to list of all stocks
+router.get('/', (req, res) => {
+  return res.redirect('/stock/all');
+});
+
 // Stock search
 router.get('/search', async (req, res) => {
   try {
@@ -13,6 +18,7 @@ router.get('/search', async (req, res) => {
     if (!query) {
       return res.render('stock/search', { 
         title: 'Search Stocks',
+        activeNav: 'search',
         stocks: [],
         searchPerformed: false,
         showBackButton: true
@@ -30,6 +36,7 @@ router.get('/search', async (req, res) => {
     
     res.render('stock/search', { 
       title: 'Search Results',
+      activeNav: 'search',
       stocks: stocks.rows,
       searchPerformed: true,
       query,
@@ -74,10 +81,9 @@ router.get('/api/search', async (req, res) => {
   }
 });
 
-// Education and Analytics Routes
-router.get('/education', stockEducationController.getEducationalResources);
-router.get('/analytics', ensureAuthenticated, stockEducationController.getAnalytics);
-router.get('/market-data', ensureAuthenticated, stockEducationController.getMarketData);
+// Stock data APIs (JSON). Keep page-rendering routes defined later.
+router.get('/api/analytics', ensureAuthenticated, stockEducationController.getAnalytics);
+router.get('/api/market-data', ensureAuthenticated, stockEducationController.getMarketData);
 
 // API Routes
 
@@ -131,6 +137,7 @@ router.get('/all', async (req, res) => {
     res.render('stock/all', { 
       showBackButton: true,
       title: 'All Stocks', 
+      activeNav: 'all',
       stocks: formattedStocks, 
       lists,
       user: req.user // Make sure user is passed to the template
@@ -155,7 +162,7 @@ router.get('/all', async (req, res) => {
 });
 
 // Individual stock route - Moved after /all to avoid conflict
-router.get('/:symbol', ensureAuthenticated, async (req, res) => {
+router.get('/:symbol', async (req, res) => {
   try {
     const { symbol } = req.params;
     
@@ -178,11 +185,19 @@ router.get('/:symbol', ensureAuthenticated, async (req, res) => {
       [symbol.toUpperCase()]
     );
 
-    // Get user's lists and portfolios for the sidebar
-    const [lists, portfolios] = await Promise.all([
-      db.query('SELECT * FROM lists WHERE user_id = $1 ORDER BY name ASC', [req.user.id]),
-      db.query('SELECT * FROM portfolios WHERE user_id = $1 ORDER BY name ASC', [req.user.id])
-    ]);
+    // Get user's lists and portfolios for the sidebar (only if authenticated)
+    let lists = { rows: [] };
+    let portfolios = { rows: [] };
+    try {
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        [lists, portfolios] = await Promise.all([
+          db.query('SELECT * FROM lists WHERE user_id = $1 ORDER BY name ASC', [req.user.id]),
+          db.query('SELECT * FROM portfolios WHERE user_id = $1 ORDER BY name ASC', [req.user.id])
+        ]);
+      }
+    } catch (authSideDataErr) {
+      console.warn('Could not fetch user lists/portfolios:', authSideDataErr.message);
+    }
 
     // Initialize historical data with empty arrays as default
     let historicalData = { labels: [], prices: [] };
@@ -581,41 +596,31 @@ router.post('/dashboard/watchlist/add', ensureAuthenticated, async (req, res) =>
 // Market Data Page
 router.get('/market-data', async (req, res) => {
   try {
-    // Get top stocks by market cap
-    const topStocks = await db.query(`
-      SELECT 
-        s.*,
-        COALESCE(s.price_change, 0) as price_change_percent,
-        COALESCE(s.trading_volume, 0) as daily_volume
-      FROM stocks s
-      WHERE s.current_price > 0
-      ORDER BY s.market_cap DESC NULLS LAST
-      LIMIT 20
-    `);
-    
-    // Get market indices
-    const indices = await db.query(`
-      SELECT 
-        s.*,
-        s.current_price as value,
-        COALESCE(s.price_change, 0) as change,
-        s.updated_at as last_updated
-      FROM stocks s
-      WHERE s.is_index = true
-      ORDER BY s.updated_at DESC NULLS LAST
-      LIMIT 10
-    `);
-    
+    const { symbol } = req.query;
+    let selectedStock = null;
+    if (symbol) {
+      try {
+        const s = await db.query('SELECT * FROM stocks WHERE UPPER(symbol) = UPPER($1) LIMIT 1', [symbol]);
+        selectedStock = s.rows[0] || null;
+      } catch (e) {
+        console.warn('Symbol lookup failed for market-data:', e.message);
+      }
+    }
+
+    const topStocks = await db.query('SELECT symbol, company_name, current_price, change_percent FROM stocks ORDER BY market_cap DESC LIMIT 10');
+    const indices = await db.query('SELECT name, value, change_percent FROM indices ORDER BY name ASC');
+
     res.render('stock/market-data', {
       title: 'Market Data',
-      activeNav: 'stock',
+      activeNav: 'market-data',
+      selectedStock,
       topStocks: topStocks.rows,
       indices: indices.rows
     });
   } catch (err) {
     console.error(err);
-    res.status(500).render('error', {
-      message: 'Error loading market data',
+    res.status(500).render('error', { 
+      message: 'Server error',
       error: process.env.NODE_ENV === 'development' ? err : {}
     });
   }
@@ -624,51 +629,46 @@ router.get('/market-data', async (req, res) => {
 // Analytics Page
 router.get('/analytics', async (req, res) => {
   try {
-    // Get trending stocks
-    const trendingStocks = await db.query(`
-      SELECT 
-        s.*,
-        COALESCE(s.price_change, 0) as change_percent,
-        COALESCE(s.trading_volume, 0) as volume,
-        CASE 
-          WHEN s.price_change > 0 THEN 'up'
-          WHEN s.price_change < 0 THEN 'down'
-          ELSE 'neutral'
-        END as trend
-      FROM stocks s
-      ORDER BY s.trading_volume DESC NULLS LAST
-      LIMIT 10
-    `);
-    
-    // Get recent market analysis
-    const marketAnalysis = await db.query(`
-      SELECT 
-        s.symbol,
-        s.name,
-        s.current_price,
-        COALESCE(s.price_change, 0) as change_percent,
-        s.updated_at as analysis_date,
-        CASE 
-          WHEN s.price_change > 0 THEN 'Bullish'
-          WHEN s.price_change < 0 THEN 'Bearish'
-          ELSE 'Neutral'
-        END as sentiment
-      FROM stocks s
-      WHERE s.current_price > 0
-      ORDER BY s.updated_at DESC
-      LIMIT 5
-    `);
-    
+    const { symbol } = req.query;
+    let selectedStock = null;
+    let selectedAnalysis = null;
+    if (symbol) {
+      try {
+        const s = await db.query('SELECT * FROM stocks WHERE UPPER(symbol) = UPPER($1) LIMIT 1', [symbol]);
+        selectedStock = s.rows[0] || null;
+      } catch (e) {
+        console.warn('Symbol lookup failed for analytics:', e.message);
+      }
+    }
+
+    const trendingStocks = await db.query('SELECT symbol, company_name, change_percent FROM stocks ORDER BY change_percent DESC LIMIT 10');
+    let marketAnalysis = [];
+    try {
+      const ma = await db.query('SELECT * FROM market_analysis ORDER BY created_at DESC LIMIT 20');
+      marketAnalysis = ma.rows;
+      if (symbol) {
+        // Best-effort filter by symbol if such a column exists; ignore errors
+        try {
+          const mas = await db.query('SELECT * FROM market_analysis WHERE UPPER(symbol) = UPPER($1) ORDER BY created_at DESC LIMIT 1', [symbol]);
+          selectedAnalysis = mas.rows[0] || null;
+        } catch (_) {}
+      }
+    } catch (e) {
+      console.warn('market_analysis table not available, continuing with empty list');
+    }
+
     res.render('stock/analytics', {
       title: 'Stock Analytics',
-      activeNav: 'stock',
+      activeNav: 'analytics',
+      selectedStock,
+      selectedAnalysis,
       trendingStocks: trendingStocks.rows,
-      marketAnalysis: marketAnalysis.rows
+      marketAnalysis
     });
   } catch (err) {
     console.error(err);
-    res.status(500).render('error', {
-      message: 'Error loading analytics',
+    res.status(500).render('error', { 
+      message: 'Server error',
       error: process.env.NODE_ENV === 'development' ? err : {}
     });
   }
@@ -677,78 +677,59 @@ router.get('/analytics', async (req, res) => {
 // Educational Resources Page
 router.get('/education', async (req, res) => {
   try {
-    // Initialize with empty arrays in case of errors
-    let articles = { rows: [] };
-    let videos = { rows: [] };
-    
-    try {
-      // Get educational articles if table exists
-      articles = await db.query(
-        `SELECT * FROM information_schema.tables 
-         WHERE table_schema = 'public' 
-         AND table_name = 'educational_content'`
-      );
-      
-      if (articles.rows.length > 0) {
-        articles = await db.query(
-          'SELECT * FROM educational_content WHERE is_published = true ORDER BY published_at DESC LIMIT 10'
-        );
-      } else {
-        console.log('Educational content table does not exist. Running in fallback mode.');
+    const { symbol } = req.query;
+    let selectedStock = null;
+    if (symbol) {
+      try {
+        const s = await db.query('SELECT * FROM stocks WHERE UPPER(symbol) = UPPER($1) LIMIT 1', [symbol]);
+        selectedStock = s.rows[0] || null;
+      } catch (e) {
+        console.warn('Symbol lookup failed for education:', e.message);
       }
-      
-      // Get video tutorials if table exists
-      const videoTableCheck = await db.query(
-        `SELECT * FROM information_schema.tables 
-         WHERE table_schema = 'public' 
-         AND table_name = 'video_tutorials'`
-      );
-      
-      if (videoTableCheck.rows.length > 0) {
-        videos = await db.query(
-          'SELECT * FROM video_tutorials WHERE is_published = true ORDER BY published_at DESC LIMIT 6'
-        );
-      } else {
-        console.log('Video tutorials table does not exist. Running in fallback mode.');
-      }
-    } catch (dbError) {
-      console.error('Database error in education route:', dbError);
-      // Continue with empty results
     }
-    
-    // Use mock data if no articles or videos found
+
+    let articles = [];
+    let videos = [];
+    try {
+      const a = await db.query('SELECT * FROM education_articles ORDER BY published_at DESC LIMIT 20');
+      articles = a.rows;
+    } catch (_) {}
+    try {
+      const v = await db.query('SELECT * FROM education_videos ORDER BY published_at DESC LIMIT 12');
+      videos = v.rows;
+    } catch (_) {}
+
     const mockArticles = [
-      {
-        id: 1,
-        title: 'Getting Started with Stock Market',
-        content: 'Learn the basics of stock market investing...',
-        category: 'Beginner',
-        published_at: new Date().toISOString()
-      }
+      { id: 1, symbol: 'AAPL', title: 'What is Market Cap?', summary: 'Learn how market capitalization is calculated and used.' },
+      { id: 2, symbol: 'MSFT', title: 'Reading Stock Charts', summary: 'Understand candlesticks, volume, and trend lines.' }
     ];
-    
     const mockVideos = [
-      {
-        id: 1,
-        title: 'Introduction to Stock Market',
-        description: 'Learn the basics of how the stock market works',
-        video_url: 'https://www.youtube.com/embed/example1',
-        thumbnail_url: '/img/service-1.jpg',
-        duration: '10:25',
-        category: 'Basics'
-      }
+      { id: 1, symbol: 'AAPL', title: 'Basics of Investing', url: '#' },
+      { id: 2, symbol: 'MSFT', title: 'Technical vs Fundamental Analysis', url: '#' }
     ];
-    
+
+    // If a symbol is provided, try to filter content for it; otherwise show all
+    let filteredArticles = articles;
+    let filteredVideos = videos;
+    if (symbol) {
+      // Try by symbol column if present; otherwise fallback to mock filter
+      filteredArticles = (articles.length ? articles.filter(a => (a.symbol || a.ticker || '').toUpperCase() === symbol.toUpperCase()) : []);
+      filteredVideos = (videos.length ? videos.filter(v => (v.symbol || v.ticker || '').toUpperCase() === symbol.toUpperCase()) : []);
+      if (filteredArticles.length === 0) filteredArticles = mockArticles.filter(a => a.symbol === symbol.toUpperCase());
+      if (filteredVideos.length === 0) filteredVideos = mockVideos.filter(v => v.symbol === symbol.toUpperCase());
+    }
+
     res.render('stock/education', {
       title: 'Educational Resources',
-      activeNav: 'stock',
-      articles: articles.rows.length > 0 ? articles.rows : mockArticles,
-      videos: videos.rows.length > 0 ? videos.rows : mockVideos,
-      showFallback: articles.rows.length === 0 && videos.rows.length === 0
+      activeNav: 'education',
+      selectedStock,
+      articles: (filteredArticles.length ? filteredArticles : (articles.length ? articles : mockArticles)),
+      videos: (filteredVideos.length ? filteredVideos : (videos.length ? videos : mockVideos)),
+      showFallback: (articles.length === 0 && videos.length === 0)
     });
   } catch (err) {
-    console.error('Error in education route:', err);
-    res.status(500).render('error', {
+    console.error(err);
+    res.status(500).render('error', { 
       title: 'Error - Stoker',
       message: 'Error loading educational resources',
       error: process.env.NODE_ENV === 'development' ? err : {}

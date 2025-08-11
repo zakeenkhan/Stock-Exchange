@@ -10,6 +10,7 @@ import flash from 'connect-flash';
 import methodOverride from 'method-override';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import initPassport from './config/passport.js';
 
 // Import routes
 import indexRouter from './routes/index.js';
@@ -23,9 +24,6 @@ import priceAlertRoutes from './routes/priceAlerts.js';
 
 // Import database connection
 import { testConnection, checkRequiredTables } from './config/database.js';
-
-// Import passport config
-import './config/passport.js';
 
 // Initialize app
 const app = express();
@@ -69,6 +67,9 @@ app.use(
   })
 );
 
+// Configure passport strategies
+initPassport(passport);
+
 // Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
@@ -82,11 +83,19 @@ app.use((req, res, next) => {
   res.locals.error_msg = req.flash('error_msg');
   res.locals.error = req.flash('error');
   res.locals.user = req.user || null;
+  // Ensure watchlists is always defined for templates that reference it
+  res.locals.watchlists = res.locals.watchlists || [];
   next();
 });
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve root-level asset folders so links like /css/style.css work
+app.use('/css', express.static(path.join(__dirname, 'css')));
+app.use('/lib', express.static(path.join(__dirname, 'lib')));
+app.use('/img', express.static(path.join(__dirname, 'img')));
+// In case any scripts are kept at the project root
+app.use('/js', express.static(path.join(__dirname, 'js')));
 
 // Routes
 app.use('/', indexRouter);
@@ -134,7 +143,7 @@ app.use((req, res) => {
   }
   
   // For regular web requests, show flash message and redirect
-  req.flash('error_msg', 'The page you are looking for does not exist.');
+  req.flash('error_msg', 'Please Add and view stocks from the main page.');
   
   // Only redirect to dashboard if user is authenticated
   if (req.isAuthenticated()) {
@@ -175,11 +184,12 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3004;
 
 // Start server regardless of database connection
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Open http://localhost:${PORT} in your browser`);
   
   try {
     // Test database connection

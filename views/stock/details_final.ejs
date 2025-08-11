@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <%- include('../partials/header') %>
-    <title><%= stock && stock.rows.length > 0 ? stock.rows[0].company_name : 'Stock Details' %></title>
+    <title><%= stock ? stock.company_name : 'Stock Details' %></title>
     <style>
         .price-change.positive { color: #28a745; }
         .price-change.negative { color: #dc3545; }
@@ -13,8 +13,8 @@
     <%- include('../partials/header') %>
 
     <div class="container mt-5">
-        <% if (stock && stock.rows && stock.rows.length > 0) { %>
-            <% const stockData = stock.rows[0]; %>
+        <% if (stock) { %>
+            <% const stockData = stock; %>
             <div class="row">
                 <div class="col-md-8">
                     <!-- Stock Header -->
@@ -43,9 +43,9 @@
                     <div class="card">
                         <div class="card-header">Recent News</div>
                         <div class="card-body">
-                            <% if (news && news.rows && news.rows.length > 0) { %>
+                            <% if (Array.isArray(news) && news.length > 0) { %>
                                 <ul class="list-group list-group-flush">
-                                    <% news.rows.forEach(article => { %>
+                                    <% news.forEach(article => { %>
                                         <li class="list-group-item">
                                             <h5><a href="<%= article.url %>" target="_blank"><%= article.title %></a></h5>
                                             <p><small><%= new Date(article.published_at).toLocaleDateString() %></small></p>
@@ -67,19 +67,19 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between py-1">
                                 <span class="stat-label">P/E Ratio</span>
-                                <span><%= analytics.pe_ratio ? analytics.pe_ratio.toFixed(2) : 'N/A' %></span>
+                                <span><%= (typeof analytics !== 'undefined' && analytics.pe_ratio) ? analytics.pe_ratio.toFixed(2) : 'N/A' %></span>
                             </div>
                             <div class="d-flex justify-content-between py-1">
                                 <span class="stat-label">52-Week High</span>
-                                <span>$<%= analytics.fifty_two_week_high ? parseFloat(analytics.fifty_two_week_high).toFixed(2) : 'N/A' %></span>
+                                <span>$<%= (typeof analytics !== 'undefined' && analytics.fifty_two_week_high) ? parseFloat(analytics.fifty_two_week_high).toFixed(2) : 'N/A' %></span>
                             </div>
                             <div class="d-flex justify-content-between py-1">
                                 <span class="stat-label">52-Week Low</span>
-                                <span>$<%= analytics.fifty_two_week_low ? parseFloat(analytics.fifty_two_week_low).toFixed(2) : 'N/A' %></span>
+                                <span>$<%= (typeof analytics !== 'undefined' && analytics.fifty_two_week_low) ? parseFloat(analytics.fifty_two_week_low).toFixed(2) : 'N/A' %></span>
                             </div>
                              <div class="d-flex justify-content-between py-1">
                                 <span class="stat-label">Avg. Volume</span>
-                                <span><%= analytics.avg_volume ? analytics.avg_volume.toLocaleString() : 'N/A' %></span>
+                                <span><%= (typeof analytics !== 'undefined' && analytics.avg_volume) ? analytics.avg_volume.toLocaleString() : 'N/A' %></span>
                             </div>
                         </div>
                     </div>
@@ -94,16 +94,16 @@
                                 <div class="input-group">
                                     <select class="form-select" id="watchlistSelect" name="list_id" required>
                                         <option value="" disabled selected>Select a watchlist</option>
-                                        <% if (watchlists && watchlists.length > 0) { %>
-                                            <% watchlists.forEach(list => { %>
+                                        <% if (lists && lists.length > 0) { %>
+                                            <% lists.forEach(list => { %>
                                                 <option value="<%= list.id %>"><%= list.name %></option>
                                             <% }); %>
                                         <% } else { %>
                                             <option disabled>No watchlists found. Create one in your dashboard.</option>
                                         <% } %>
                                     </select>
-                                    <input type="hidden" name="stock_id" value="<%= stock.symbol || stock.ticker %>">
-                                    <button type="submit" class="btn btn-primary" id="addToWatchlistBtn" <%= (watchlists && watchlists.length > 0) ? '' : 'disabled' %>>
+                                    <input type="hidden" name="stock_id" value="<%= stockData.id %>">
+                                    <button type="submit" class="btn btn-primary" id="addToWatchlistBtn" <%= (lists && lists.length > 0) ? '' : 'disabled' %>>
                                         <span id="addToWatchlistText">Add to Watchlist</span>
                                         <span id="addToWatchlistSpinner" class="spinner-border spinner-border-sm d-none" role="status">
                                             <span class="visually-hidden">Loading...</span>

@@ -1,14 +1,23 @@
-const fs = require('fs');
-const path = require('path');
-const { Pool } = require('pg');
-require('dotenv').config();
+import fs from 'fs';
+import path from 'path';
+import pg from 'pg';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config();
+
+const { Pool } = pg;
 
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'stoker',
-  password: process.env.DB_PASSWORD || 'yourpassword',
-  port: process.env.DB_PORT || 5432,
+  password: process.env.DB_PASSWORD || 'Zakeen123@',
+  port: process.env.DB_PORT || 4000,
 });
 
 async function runMigrations() {

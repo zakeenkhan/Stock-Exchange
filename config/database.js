@@ -5,14 +5,39 @@ dotenv.config();
 
 const { Pool } = pg;
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT || 4000,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// Database configuration - prioritize DATABASE_URL for cloud services like NeonDB
+let dbConfig;
+
+if (process.env.DATABASE_URL) {
+  // Use DATABASE_URL for cloud services like NeonDB
+  dbConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false // Required for NeonDB and other cloud PostgreSQL services
+    }
+  };
+} else {
+  // Use individual environment variables for local development
+  dbConfig = {
+    user: String(process.env.DB_USER || 'postgres'),
+    host: String(process.env.DB_HOST || 'localhost'),
+    database: String(process.env.DB_NAME || 'stoker'),
+    password: String(process.env.DB_PASSWORD || ''),
+    port: parseInt(process.env.DB_PORT) || 5432,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  };
+}
+
+// Log configuration (without sensitive data) for debugging
+console.log('Database config:', {
+  type: process.env.DATABASE_URL ? 'CONNECTION_STRING' : 'INDIVIDUAL_PARAMS',
+  host: process.env.DATABASE_URL ? 'FROM_CONNECTION_STRING' : dbConfig.host,
+  database: process.env.DATABASE_URL ? 'FROM_CONNECTION_STRING' : dbConfig.database,
+  port: process.env.DATABASE_URL ? 'FROM_CONNECTION_STRING' : dbConfig.port,
+  ssl: dbConfig.ssl ? 'ENABLED' : 'DISABLED'
 });
+
+const pool = new Pool(dbConfig);
 
 // Test the database connection
 pool.query('SELECT NOW()', (err) => {
@@ -59,7 +84,7 @@ async function testConnection(retries = MAX_RETRIES) {
   try {
     console.log('Attempting to connect to database...');
     const client = await pool.connect();
-    console.log('Connected to Neon PostgreSQL database');
+    console.log('Connected to PostgreSQL database');
     client.release();
     return true;
   } catch (err) {

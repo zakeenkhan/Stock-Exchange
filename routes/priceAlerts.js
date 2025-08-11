@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import controller from '../controllers/priceAlertsController.js';
+
 const router = express.Router();
-const controller = require('../controllers/priceAlertsController');
 
 router.get('/', controller.getAllAlerts);
 router.post('/create', controller.createAlert);
 
-module.exports = router;
+export default router;
