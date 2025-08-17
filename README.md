@@ -80,6 +80,3 @@ npm run dev
   <img src="screenshorts/dashboard2.JPG" alt="Dashboard 2" width="45%" style="border:1px solid #ddd;border-radius:8px;padding:4px;background:#fff;margin:6px;box-shadow:0 2px 6px rgba(0,0,0,.08);" />
 </p>
 
-## License
-
-ISC — see `LICENSE.txt`.
