@@ -1,11 +1,11 @@
 # Stoker — Stock Market Platform
+The Stock Tracking Web Application is a full-stack project developed using Node.js, Express, EJS, and PostgreSQL. It is designed to help users monitor stock market trends, manage personal portfolios, and create customized watchlists within an intuitive and responsive interface.
 
-Stock tracking web app built with Node.js, Express, EJS, and PostgreSQL. Create watchlists, manage portfolios, and browse market data in a responsive UI.
+Users can browse market data, track the performance of specific stocks, and organize them into watchlists for quick access. The system also allows portfolio management, where users can record their investments, analyze gains/losses, and maintain an overview of their financial positions.
 
-## Live Demo
+The backend is powered by Node.js and Express, ensuring fast and scalable server-side logic, while PostgreSQL is used for reliable and structured data storage. The frontend, built with EJS templates, provides a clean and responsive UI that adapts across devices, making it easy for users to stay informed about their investments in real time.
 
-- https://your-live-demo-url.example.com
-  - Replace after deployment (see Deployment).
+This project demonstrates practical applications of full-stack web development, database management, and financial data visualization, making it a strong example of both technical and domain-specific problem solving.
 
 ## Features
 
@@ -79,10 +79,6 @@ npm run dev
   <img src="screenshorts/dashboard.JPG" alt="Dashboard" width="45%" style="border:1px solid #ddd;border-radius:8px;padding:4px;background:#fff;margin:6px;box-shadow:0 2px 6px rgba(0,0,0,.08);" />
   <img src="screenshorts/dashboard2.JPG" alt="Dashboard 2" width="45%" style="border:1px solid #ddd;border-radius:8px;padding:4px;background:#fff;margin:6px;box-shadow:0 2px 6px rgba(0,0,0,.08);" />
 </p>
-
-Video demo:
-
-[Website demo (MP4)](img/Website demo.mp4)
 
 ## License
 
